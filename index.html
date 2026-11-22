@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CampusConnect — Find Love on Campus</title>
+<style>
+  /* ───────── base ───────── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #fdf6f9; color: #1f2937; min-height: 100vh;
+  }
+
+  /* ───────── WELCOME / LANDING PAGE ───────── */
+  .welcome {
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; flex-direction: column;
+    background: #1a0a12; overflow-y: auto;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  .welcome.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  /* Rotating background layer */
+  .welcome-bg {
+    position: fixed; inset: 0; z-index: 0;
+    background-size: cover; background-position: center 30%;
+    transition: opacity 1.2s ease-in-out, background-image 1.2s ease-in-out;
+  }
+  .welcome-bg::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(26,10,18,0.55) 0%, rgba(26,10,18,0.25) 35%, rgba(26,10,18,0.75) 100%),
+      linear-gradient(120deg, rgba(131,24,67,0.7) 0%, rgba(190,24,93,0.25) 55%, rgba(236,72,153,0.05) 100%);
+  }
+
+  .welcome-content {
+    position: relative; z-index: 2;
+    max-width: 1120px; margin: 0 auto; width: 100%;
+    padding: 28px 24px 64px;
+    display: flex; flex-direction: column; min-height: 100vh;
+  }
+
+  /* Top bar */
+  .welcome-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 40px; flex-wrap: wrap; gap: 14px;
+  }
+  .welcome-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 22px; font-weight: 800; color: #fff;
+    letter-spacing: -0.4px; text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+  }
+  .welcome-logo .logo-mark {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, #be185d, #ec4899);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; box-shadow: 0 4px 16px rgba(236,72,153,0.5);
+  }
+  .welcome-top-actions { display: flex; gap: 10px; }
+  .welcome-top-actions button {
+    padding: 10px 22px; border-radius: 24px; font-size: 14px;
+    font-weight: 700; cursor: pointer; transition: all 0.18s;
+    font-family: inherit; border: 1.5px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.12); color: #fff;
+    backdrop-filter: blur(8px);
+  }
+  .welcome-top-actions button:hover { background: rgba(255,255,255,0.28); transform: translateY(-1px); }
+  .welcome-top-actions button.solid {
+    background: #fff; color: #be185d; border-color: #fff;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+  }
+  .welcome-top-actions button.solid:hover { background: #fdf2f8; }
+
+  /* Hero copy */
+  .welcome-hero {
+    max-width: 720px; margin-bottom: 44px;
+  }
+  .welcome-badge {
+    display: inline-block; background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: #fff; font-size: 12px; font-weight: 700;
+    padding: 7px 18px; border-radius: 999px; margin-bottom: 20px;
+    backdrop-filter: blur(8px); letter-spacing: 0.6px;
+  }
+  .welcome-hero h1 {
+    font-size: clamp(34px, 6vw, 58px); font-weight: 800;
+    line-height: 1.08; letter-spacing: -1.4px;
+    color: #fff; margin-bottom: 20px;
+    text-shadow: 0 4px 28px rgba(0,0,0,0.45);
+  }
+  .welcome-hero h1 .accent {
+    background: linear-gradient(135deg, #fbcfe8, #f9a8d4);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .welcome-hero p {
+    font-size: 17px; line-height: 1.7; color: rgba(255,255,255,0.9);
+    max-width: 580px; margin-bottom: 32px;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.4);
+  }
+  .welcome-cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .welcome-cta {
+    padding: 17px 40px; border-radius: 16px; font-size: 16px;
+    font-weight: 800; cursor: pointer; border: none;
+    font-family: inherit; transition: all 0.2s;
+    background: #fff; color: #be185d;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  }
+  .welcome-cta:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(0,0,0,0.45); }
+  .welcome-cta.ghost {
+    background: rgba(255,255,255,0.14); color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.6);
+    backdrop-filter: blur(10px); box-shadow: none;
+  }
+  .welcome-cta.ghost:hover { background: rgba(255,255,255,0.28); }
+
+  /* Photo collage strip */
+  .welcome-collage-label {
+    display: flex; align-items: center; gap: 10px;
+    color: rgba(255,255,255,0.85); font-size: 13px;
+    font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .welcome-collage-label::before {
+    content: ""; width: 28px; height: 2px; background: #f9a8d4; border-radius: 2px;
+  }
+  .welcome-collage {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px; margin-bottom: 44px;
+  }
+  .collage-card {
+    position: relative; border-radius: 18px; overflow: hidden;
+    aspect-ratio: 4 / 5;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.14);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+  }
+  .collage-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 18px 44px rgba(0,0,0,0.5);
+  }
+  .collage-card img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform 0.6s ease;
+  }
+  .collage-card:hover img { transform: scale(1.08); }
+  .collage-card::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 45%, rgba(26,10,18,0.85) 100%);
+  }
+  .collage-caption {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+    padding: 14px 16px; color: #fff;
+  }
+  .collage-caption strong {
+    display: block; font-size: 13px; font-weight: 700; margin-bottom: 2px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .collage-caption span {
+    font-size: 11.5px; color: rgba(255,255,255,0.82); line-height: 1.4;
+    text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  }
+  .collage-heart {
+    position: absolute; top: 12px; right: 12px; z-index: 2;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.22); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; border: 1px solid rgba(255,255,255,0.35);
+  }
+
+  /* Trust stats */
+  .welcome-stats {
+    display: flex; gap: 44px; flex-wrap: wrap;
+    padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.18);
+  }
+  .welcome-stats div strong {
+    display: block; font-size: 30px; font-weight: 800; color: #fff;
+    letter-spacing: -0.6px; text-shadow: 0 2px 14px rgba(0,0,0,0.4);
+  }
+  .welcome-stats div span {
+    font-size: 12px; color: rgba(255,255,255,0.75);
+    letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600;
+  }
+
+  /* ───────── existing CampusConnect styles (auth, app) ───────── */
+  header { background: linear-gradient(135deg, #831843 0%, #be185d 50%, #ec4899 100%); color: white; padding: 12px 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(190, 24, 93, 0.3); position: sticky; top: 0; z-index: 50; flex-wrap: wrap; }
+  header h1 { font-size: 19px; margin: 0; font-weight: 800; letter-spacing: -0.3px; }
+  .header-user { display: flex; align-items: center; gap: 10px; margin-left: 8px; font-size: 13px; opacity: 0.95; }
+  .header-avatar { width: 32px; height: 32px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 14px; color: #be185d; font-weight: 700; }
+  .header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .tabs { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; align-items: center; }
+  .tabs button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35); color: white; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; font-weight: 500; }
+  .tabs button.active { background: white; color: #be185d; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .tabs button:hover:not(.active) { background: rgba(255,255,255,0.25); }
+  .auth-top-bar { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+  .auth-top-btn { background: white; color: #be185d; border: none; padding: 8px 20px; border-radius: 22px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+  .auth-top-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  .auth-top-btn.ghost { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.5); box-shadow: none; }
+  .auth-top-btn.ghost:hover { background: rgba(255,255,255,0.3); }
+  .logout-btn { background: rgba(255,255,255,0.15) !important; border: 1px solid rgba(255,255,255,0.35) !important; }
+  .logout-btn:hover { background: rgba(255,255,255,0.3) !important; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 22px; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .card { background: white; border-radius: 16px; padding: 22px; box-shadow: 0 2px 12px rgba(190, 24, 93, 0.06); margin-bottom: 16px; border: 1px solid #fce7f3; }
+  .card h2 { font-size: 16px; margin: 0 0 16px; color: #831843; font-weight: 700; letter-spacing: -0.2px; }
+  fieldset { border: 1px solid #fce7f3; border-radius: 12px; padding: 16px; margin: 0 0 16px; background: #fffdfe; }
+  legend { font-size: 13px; font-weight: 700; padding: 0 8px; color: #be185d; }
+  label { display: block; font-size: 13px; margin: 12px 0 5px; color: #4b5563; font-weight: 500; }
+  input[type="text"], input[type="number"], input[type="email"], input[type="tel"], input[type="password"], select, textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #f3d1e0; border-radius: 10px; font-size: 14px; background: white; transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit; }
+  textarea { resize: vertical; min-height: 70px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #ec4899; box-shadow: 0 0 0 4px rgba(236,72,153,0.1); }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .checkbox-row input { width: auto; accent-color: #ec4899; }
+  .checkbox-row label { margin: 0; }
+  .btn { background: linear-gradient(135deg, #be185d, #ec4899); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3); }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-ghost { background: white; color: #be185d; border: 1.5px solid #f3d1e0; box-shadow: none; }
+  .btn-ghost:hover { background: #fdf2f8; border-color: #ec4899; box-shadow: none; }
+  .btn-full { width: 100%; }
+  .btn-blue { background: linear-gradient(135deg, #1e40af, #3b82f6); box-shadow: 0 4px 14px rgba(59,130,246,0.4); }
+  .btn-paystack { background: linear-gradient(135deg, #00c3f7, #0070ba); box-shadow: 0 4px 14px rgba(0,195,247,0.4); }
+  .btn-binance { background: linear-gradient(135deg, #f0b90b, #e6a800); color: #1e2026; box-shadow: 0 4px 14px rgba(240,185,11,0.4); }
+  .hint { font-size: 12px; color: #9ca3af; margin-top: 5px; line-height: 1.4; }
+  .link-btn { background: none; border: none; color: #be185d; font-weight: 700; cursor: pointer; font-size: 13px; padding: 0; text-decoration: underline; }
+  .field-error { color: #dc2626; font-size: 11px; margin-top: 4px; font-weight: 500; }
+  .phone-row { display: flex; gap: 8px; }
+  .phone-row select { flex: 0 0 130px; }
+  .phone-row input { flex: 1; }
+  .safety-banner { background: linear-gradient(135deg, #fef2f2, #fff7ed); border: 1.5px solid #fca5a5; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; gap: 12px; align-items: flex-start; font-size: 13px; color: #991b1b; line-height: 1.6; }
+  .safety-banner .safety-icon { font-size: 22px; flex-shrink: 0; }
+  .safety-banner strong { color: #7f1d1d; }
+  .auth-wrap { max-width: 520px; margin: 30px auto; }
+  .auth-card { background: white; border-radius: 20px; padding: 32px; box-shadow: 0 10px 40px rgba(190, 24, 93, 0.15); border: 1px solid #fce7f3; }
+  .auth-card h2 { text-align: center; color: #831843; margin: 0 0 8px; font-size: 24px; font-weight: 800; }
+  .auth-card .auth-sub { text-align: center; color: #9ca3af; font-size: 13px; margin-bottom: 24px; }
+  .auth-tabs { display: flex; gap: 6px; margin-bottom: 22px; background: #fdf2f8; padding: 5px; border-radius: 14px; }
+  .auth-tabs button { flex: 1; padding: 11px 8px; border: none; background: transparent; border-radius: 10px; font-size: 13px; font-weight: 700; color: #9ca3af; cursor: pointer; transition: all 0.18s; white-space: nowrap; }
+  .auth-tabs button.active { background: white; color: #be185d; box-shadow: 0 2px 10px rgba(190,24,93,0.15); }
+  .auth-tabs button:hover:not(.active) { color: #be185d; }
+  .auth-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .auth-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .auth-info { background: #eff6ff; border: 1px solid #dbeafe; color: #1e40af; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; }
+  .batch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
+  .batch-option { border: 2px solid #fce7f3; border-radius: 14px; padding: 18px; background: white; cursor: pointer; transition: all 0.2s; position: relative; }
+  .batch-option:hover { border-color: #fbcfe8; transform: translateY(-2px); }
+  .batch-option.selected { border-color: #3b82f6; background: #eff6ff; box-shadow: 0 4px 16px rgba(59,130,246,0.15); }
+  .batch-option.selected::after { content: "✓"; position: absolute; top: 10px; right: 12px; background: #3b82f6; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .batch-option h4 { margin: 0 0 6px; color: #1e40af; font-size: 15px; font-weight: 800; }
+  .batch-option .batch-price { font-size: 22px; font-weight: 800; color: #1e40af; margin: 4px 0; }
+  .batch-option .batch-price span { font-size: 12px; font-weight: 500; color: #6b7280; }
+  .batch-option p { font-size: 12px; color: #6b7280; margin: 8px 0 0; line-height: 1.5; }
+  .batch-option .batch-badge { display: inline-block; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white; font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 700; margin-bottom: 8px; }
+  .autocomplete { position: relative; }
+  .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; background: white; border: 1.5px solid #f3d1e0; border-radius: 10px; margin-top: 4px; max-height: 260px; overflow-y: auto; box-shadow: 0 12px 30px rgba(190, 24, 93, 0.12); }
+  .autocomplete-item { padding: 10px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #fdf2f8; transition: background 0.1s; }
+  .autocomplete-item:hover, .autocomplete-item.active { background: #fdf2f8; }
+  .autocomplete-item small { display: block; color: #9ca3af; font-size: 11px; }
+  .autocomplete-add { padding: 12px 14px; font-size: 13px; cursor: pointer; background: #f0fdf4; color: #166534; font-weight: 700; border-top: 2px dashed #bbf7d0; display: flex; align-items: center; gap: 8px; transition: background 0.15s; }
+  .autocomplete-add:hover { background: #dcfce7; }
+  .autocomplete-add .plus-icon { background: #22c55e; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { background: #fce7f3; color: #be185d; border-radius: 999px; padding: 5px 12px; font-size: 12px; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+  .chip button { background: none; border: none; color: #be185d; cursor: pointer; font-weight: 700; font-size: 13px; padding: 0; line-height: 1; }
+  .hero { border-radius: 24px; overflow: hidden; color: white; margin-bottom: 32px; position: relative; box-shadow: 0 20px 60px rgba(190, 24, 93, 0.35); min-height: 460px; display: flex; align-items: center; background-size: cover; background-position: center 30%; transition: background-image 1s ease-in-out; }
+  .hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, rgba(131,24,67,0.92) 0%, rgba(190,24,93,0.78) 42%, rgba(236,72,153,0.35) 70%, rgba(236,72,153,0.05) 100%); z-index: 1; }
+  .hero::after { content: "❤"; position: absolute; top: 20px; right: 60px; font-size: 120px; color: rgba(255,255,255,0.12); z-index: 1; transform: rotate(15deg); animation: floatHeart 6s ease-in-out infinite; }
+  @keyframes floatHeart { 0%, 100% { transform: rotate(15deg) translateY(0); opacity: 0.12; } 50% { transform: rotate(15deg) translateY(-14px); opacity: 0.2; } }
+  .hero-inner { position: relative; z-index: 2; text-align: left; padding: 56px 48px; max-width: 640px; }
+  .hero-badge { display: inline-block; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.4); color: white; font-size: 12px; font-weight: 700; padding: 6px 16px; border-radius: 999px; margin-bottom: 18px; backdrop-filter: blur(6px); letter-spacing: 0.5px; }
+  .hero h1 { margin: 0 0 16px; font-size: 42px; font-weight: 800; line-height: 1.12; letter-spacing: -1px; text-shadow: 0 3px 18px rgba(0,0,0,0.35); }
+  .hero h1 .accent { color: #fbcfe8; }
+  .hero p { margin: 0 0 28px; max-width: 540px; opacity: 0.97; font-size: 15.5px; line-height: 1.75; text-shadow: 0 1px 8px rgba(0,0,0,0.3); }
+  .hero-cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero .cta { background: white; color: #be185d; border: none; padding: 15px 36px; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 24px rgba(0,0,0,0.3); transition: transform 0.15s, box-shadow 0.15s; }
+  .hero .cta:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,0,0,0.35); }
+  .hero .cta-ghost { background: rgba(255,255,255,0.14); color: white; border: 1.5px solid rgba(255,255,255,0.55); padding: 15px 30px; border-radius: 14px; font-size: 15px; font-weight: 700; cursor: pointer; backdrop-filter: blur(6px); transition: background 0.15s; }
+  .hero .cta-ghost:hover { background: rgba(255,255,255,0.26); }
+  .hero-stats { display: flex; gap: 40px; margin-top: 36px; flex-wrap: wrap; }
+  .hero-stats div { text-align: left; }
+  .hero-stats strong { display: block; font-size: 28px; font-weight: 800; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+  .hero-stats span { font-size: 12px; opacity: 0.9; letter-spacing: 0.6px; }
+  @media (max-width: 700px) { .hero { min-height: 420px; } .hero-inner { padding: 40px 24px; } .hero h1 { font-size: 30px; } .hero-stats { gap: 24px; } .hero-stats strong { font-size: 22px; } }
+  .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .section-title h2 { margin: 0; font-size: 20px; color: #831843; font-weight: 800; letter-spacing: -0.3px; }
+  .section-title a { color: #be185d; font-size: 13px; cursor: pointer; text-decoration: none; font-weight: 700; }
+  .section-title a:hover { color: #ec4899; }
+  .featured-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+  .featured-card { background: white; border-radius: 18px; overflow: hidden; box-shadow: 0 2px 14px rgba(190, 24, 93, 0.08); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; border: 1px solid #fce7f3; }
+  .featured-card:hover { transform: translateY(-5px); box-shadow: 0 14px 36px rgba(190, 24, 93, 0.18); }
+  .featured-card.female-card { border-color: #fbcfe8; }
+  .featured-cover { height: 95px; background: linear-gradient(135deg, #831843 0%, #be185d 60%, #ec4899 100%); position: relative; }
+  .featured-cover.male-cover { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 60%, #06b6d4 100%); }
+  .featured-cover.other-cover { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a78bfa 100%); }
+  .featured-cover.alt1 { background: linear-gradient(135deg, #be185d 0%, #f472b6 100%); }
+  .featured-cover.alt2 { background: linear-gradient(135deg, #831843 0%, #ec4899 100%); }
+  .featured-cover.alt3 { background: linear-gradient(135deg, #9d174d 0%, #f9a8d4 100%); }
+  .featured-cover.alt4 { background: linear-gradient(135deg, #4c1d95 0%, #a78bfa 100%); }
+  .avatar { width: 72px; height: 72px; border-radius: 50%; background: white; border: 4px solid white; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700; color: #be185d; position: absolute; bottom: -36px; left: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .female-card .avatar { color: #be185d; }
+  .male-card .avatar { color: #1e40af; }
+  .featured-body { padding: 46px 18px 18px; flex: 1; display: flex; flex-direction: column; }
+  .featured-body h3 { margin: 0 0 3px; font-size: 16px; display: flex; align-items: center; gap: 6px; color: #111827; font-weight: 700; flex-wrap: wrap; }
+  .online-dot { width: 9px; height: 9px; border-radius: 50%; background: #22c55e; display: inline-block; box-shadow: 0 0 0 3px rgba(34,197,94,0.25); animation: pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%, 100% { box-shadow: 0 0 0 3px rgba(34,197,94,0.25); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0.1); } }
+  .verified-badge { display: inline-flex; align-items: center; gap: 3px; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: white; font-size: 10px; padding: 3px 8px; border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; }
+  .featured-body .sub { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
+  .featured-inst { background: #fdf2f8; border-radius: 10px; padding: 9px 12px; font-size: 12px; color: #be185d; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; font-weight: 500; border: 1px solid #fce7f3; }
+  .male-card .featured-inst { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+  .featured-inst.hidden-inst { background: #f9fafb; color: #9ca3af; font-style: italic; border-color: #f3f4f6; }
+  .featured-inst .manual-tag { background: #fef3c7; color: #92400e; font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; font-weight: 700; }
+  .featured-hobbies { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+  .hobby-tag { background: #fce7f3; color: #9d174d; font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 500; }
+  .male-card .hobby-tag { background: #dbeafe; color: #1e40af; }
+  .other-card .hobby-tag { background: #ede9fe; color: #6d28d9; }
+  .lifestyle-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .lifestyle-tag { font-size: 10px; padding: 3px 9px; border-radius: 999px; font-weight: 600; letter-spacing: 0.2px; }
+  .lifestyle-tag.smoke { background: #fef3c7; color: #92400e; }
+  .lifestyle-tag.drink { background: #fef2f2; color: #991b1b; }
+  .lifestyle-tag.none { background: #f0fdf4; color: #166534; }
+  .featured-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .featured-actions button { flex: 1; padding: 9px 0; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-connect { background: linear-gradient(135deg, #be185d, #ec4899); color: white; }
+  .btn-connect:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-chat { background: #10b981; color: white; }
+  .btn-chat:hover { background: #059669; }
+  .btn-view { background: #fdf2f8; color: #be185d; }
+  .btn-view:hover { background: #fce7f3; }
+  .verify-card { background: linear-gradient(135deg, #eff6ff, #f0f9ff); border: 2px dashed #3b82f6; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 24px; }
+  .verify-card h3 { margin: 0 0 8px; color: #1e40af; font-size: 18px; }
+  .verify-card p { color: #6b7280; font-size: 13px; margin: 0 0 16px; line-height: 1.6; }
+  .verify-price { font-size: 32px; font-weight: 800; color: #1e40af; margin: 8px 0; }
+  .verify-price span { font-size: 14px; font-weight: 500; color: #6b7280; }
+  .profile-card { border: 1px solid #fce7f3; border-radius: 14px; padding: 18px; margin-bottom: 14px; background: white; transition: box-shadow 0.2s, border-color 0.2s; }
+  .profile-card:hover { box-shadow: 0 4px 16px rgba(190, 24, 93, 0.1); border-color: #fbcfe8; }
+  .profile-card.female-result { border-left: 4px solid #ec4899; }
+  .profile-card.male-result { border-left: 4px solid #3b82f6; }
+  .profile-card.other-result { border-left: 4px solid #8b5cf6; }
+  .profile-card h3 { margin: 0 0 5px; font-size: 16px; color: #111827; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .profile-meta { font-size: 12px; color: #9ca3af; margin-bottom: 10px; }
+  .profile-inst { background: #fdf2f8; border-left: 3px solid #ec4899; padding: 9px 12px; border-radius: 6px; font-size: 13px; margin-top: 10px; color: #831843; }
+  .male-result .profile-inst { background: #eff6ff; border-left-color: #3b82f6; color: #1e3a8a; }
+  .profile-inst .unverified { display: inline-block; background: #fef3c7; color: #92400e; font-size: 10px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 600; }
+  .profile-inst .verified-pill { display: inline-block; background: #dbeafe; color: #1e40af; font-size: 10px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
+  .badge { display: inline-block; background: #f3f4f6; color: #374151; padding: 3px 10px; border-radius: 6px; font-size: 11px; margin-right: 4px; font-weight: 500; }
+  .badge-hobby { background: #fce7f3; color: #9d174d; }
+  .male-result .badge-hobby { background: #dbeafe; color: #1e40af; }
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .results-header h2 { margin: 0; color: #831843; font-size: 20px; font-weight: 800; }
+  .count { font-size: 13px; color: #9ca3af; font-weight: 500; }
+  .empty { text-align: center; padding: 48px 20px; color: #9ca3af; font-size: 14px; }
+  .range-row { display: flex; gap: 8px; align-items: center; }
+  .range-row input { flex: 1; }
+  .section-hidden { display: none; }
+  .notice { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
+  .success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 14px; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(131, 24, 67, 0.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(3px); }
+  .modal { background: white; border-radius: 20px; max-width: 480px; width: 100%; overflow: hidden; box-shadow: 0 24px 60px rgba(131, 24, 67, 0.35); animation: pop 0.2s ease-out; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
+  @keyframes pop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-cover { height: 100px; position: relative; flex-shrink: 0; }
+  .modal-cover.female-cover { background: linear-gradient(135deg, #831843 0%, #be185d 60%, #ec4899 100%); }
+  .modal-cover.male-cover { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 60%, #06b6d4 100%); }
+  .modal-cover.other-cover { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%); }
+  .modal .avatar { width: 80px; height: 80px; font-size: 30px; bottom: -40px; left: 26px; }
+  .modal-body { padding: 52px 26px 26px; overflow-y: auto; }
+  .modal-body h3 { margin: 0 0 5px; font-size: 20px; color: #111827; font-weight: 800; }
+  .modal-body .sub { font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
+  .modal-close { position: absolute; top: 14px; right: 14px; background: rgba(255,255,255,0.95); border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; color: #be185d; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: transform 0.15s; }
+  .modal-close:hover { transform: scale(1.1); }
+  .chat-layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; height: calc(100vh - 130px); min-height: 500px; }
+  @media (max-width: 860px) { .chat-layout { grid-template-columns: 1fr; height: auto; } }
+  .chat-sidebar { background: white; border-radius: 16px; border: 1px solid #fce7f3; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 12px rgba(190, 24, 93, 0.06); }
+  .chat-sidebar-header { padding: 16px 18px; border-bottom: 1px solid #fce7f3; font-weight: 700; color: #831843; font-size: 15px; background: #fdf2f8; }
+  .chat-list { overflow-y: auto; flex: 1; }
+  .chat-list-item { padding: 14px 18px; border-bottom: 1px solid #fdf2f8; cursor: pointer; display: flex; gap: 12px; align-items: center; transition: background 0.15s; }
+  .chat-list-item:hover { background: #fdf2f8; }
+  .chat-list-item.active { background: #fce7f3; border-left: 3px solid #ec4899; }
+  .chat-list-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #be185d, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; flex-shrink: 0; overflow: hidden; }
+  .chat-list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .chat-list-info { flex: 1; min-width: 0; }
+  .chat-list-info h4 { margin: 0 0 2px; font-size: 14px; color: #111827; display: flex; align-items: center; gap: 5px; }
+  .chat-list-info p { margin: 0; font-size: 12px; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-list-time { font-size: 10px; color: #d1d5db; flex-shrink: 0; }
+  .chat-main { background: white; border-radius: 16px; border: 1px solid #fce7f3; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 2px 12px rgba(190, 24, 93, 0.06); }
+  .chat-main-header { padding: 14px 20px; border-bottom: 1px solid #fce7f3; display: flex; align-items: center; gap: 12px; background: #fdf2f8; flex-shrink: 0; }
+  .chat-main-header .chat-list-avatar { width: 40px; height: 40px; font-size: 18px; }
+  .chat-main-header-info h4 { margin: 0; font-size: 15px; color: #111827; }
+  .chat-main-header-info p { margin: 0; font-size: 11px; color: #22c55e; font-weight: 600; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: #fdfafb; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.5; word-wrap: break-word; animation: fadeIn 0.2s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.sent { align-self: flex-end; background: linear-gradient(135deg, #be185d, #ec4899); color: white; border-bottom-right-radius: 4px; }
+  .msg.received { align-self: flex-start; background: white; color: #1f2937; border: 1px solid #fce7f3; border-bottom-left-radius: 4px; }
+  .msg-meta { font-size: 10px; opacity: 0.7; margin-top: 4px; }
+  .msg img { max-width: 100%; border-radius: 10px; margin-top: 6px; display: block; }
+  .msg audio { max-width: 100%; margin-top: 6px; height: 36px; }
+  .msg.blocked-msg { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 12px; font-style: italic; text-align: center; max-width: 100%; align-self: center; border-radius: 10px; }
+  .chat-input-area { padding: 14px 18px; border-top: 1px solid #fce7f3; display: flex; gap: 8px; align-items: center; background: white; flex-shrink: 0; flex-wrap: wrap; }
+  .chat-input-area input[type="text"] { flex: 1; min-width: 120px; border-radius: 22px; }
+  .chat-input-area input[type="text"].blocked { border-color: #ef4444; box-shadow: 0 0 0 4px rgba(239,68,68,0.1); }
+  .icon-btn { background: #fdf2f8; border: 1.5px solid #fce7f3; color: #be185d; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.15s; flex-shrink: 0; }
+  .icon-btn:hover { background: #fce7f3; transform: scale(1.05); }
+  .icon-btn.recording { background: #ef4444; color: white; animation: pulse-rec 1s infinite; }
+  @keyframes pulse-rec { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); } 50% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } }
+  .send-btn { background: linear-gradient(135deg, #be185d, #ec4899); color: white; border: none; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; transition: transform 0.15s; box-shadow: 0 4px 12px rgba(236,72,153,0.3); }
+  .send-btn:hover { transform: scale(1.08); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .chat-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9ca3af; padding: 40px; text-align: center; }
+  .chat-empty .big-icon { font-size: 60px; margin-bottom: 16px; opacity: 0.5; }
+  .chat-warning { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 8px 14px; border-radius: 8px; font-size: 12px; margin: 0 18px 0; display: none; font-weight: 500; }
+  .chat-warning.show { display: block; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #fdf2f8; }
+  ::-webkit-scrollbar-thumb { background: #f9a8d4; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #ec4899; }
+
+  /* ───────── premium Paystack checkout styles ───────── */
+  .checkout-page { position: fixed; inset: 0; z-index: 200; background: #fdf8f5; overflow-y: auto; display: none; }
+  .checkout-page.open { display: block; }
+  .checkout-shell { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  .ck-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .ck-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; color: #6b1d3a; }
+  .ck-logo span.mark { width: 38px; height: 38px; background: linear-gradient(135deg, #6b1d3a, #a83e63); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; }
+  .ck-secure { display: inline-flex; align-items: center; gap: 6px; background: #f9e6ed; color: #6b1d3a; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 1px solid #f2d0dc; }
+  .ck-hero { text-align: center; max-width: 620px; margin: 0 auto 36px; }
+  .ck-hero h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.8px; line-height: 1.15; color: #4a1228; margin: 0 0 10px; }
+  .ck-hero p { color: #8a6d78; font-size: 16px; margin: 0; }
+  .ck-grid { display: grid; grid-template-columns: 1fr 400px; gap: 28px; align-items: start; }
+  @media (max-width: 880px) { .ck-grid { grid-template-columns: 1fr; } }
+  .ck-panel { background: #fff; border-radius: 20px; box-shadow: 0 8px 28px rgba(107,29,58,0.12); border: 1px solid #f9e6ed; padding: 28px; }
+  .ck-panel-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #8a6d78; margin-bottom: 18px; }
+  .ck-plans { display: flex; flex-direction: column; gap: 12px; }
+  .ck-plan { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-radius: 14px; border: 2px solid #f2d0dc; background: #fff; cursor: pointer; transition: all 0.18s ease; position: relative; }
+  .ck-plan:hover { border-color: #d9a8ba; background: #fffafb; }
+  .ck-plan.selected { border-color: #6b1d3a; background: linear-gradient(135deg, #fff7fa, #f9e6ed); box-shadow: 0 0 0 3px rgba(107,29,58,0.08); }
+  .ck-plan.selected::after { content: "✓"; position: absolute; top: 12px; right: 14px; width: 22px; height: 22px; background: #6b1d3a; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .ck-plan-info h3 { font-size: 16px; font-weight: 700; color: #4a1228; margin: 0 0 2px; }
+  .ck-plan-info p { font-size: 12.5px; color: #8a6d78; margin: 0; }
+  .ck-plan-price { text-align: right; padding-right: 28px; }
+  .ck-plan-price .amount { font-size: 20px; font-weight: 800; color: #6b1d3a; letter-spacing: -0.5px; }
+  .ck-plan-price .period { font-size: 11px; color: #8a6d78; display: block; }
+  .ck-badge { display: inline-block; background: #6b1d3a; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.6px; margin-bottom: 4px; }
+  .ck-summary { position: sticky; top: 24px; }
+  .ck-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; border-bottom: 1px dashed #f2d0dc; }
+  .ck-row:last-of-type { border-bottom: none; }
+  .ck-row .label { color: #8a6d78; }
+  .ck-row .value { font-weight: 600; color: #2d1a22; }
+  .ck-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; padding-top: 16px; border-top: 2px solid #6b1d3a; }
+  .ck-total .label { font-size: 14px; font-weight: 700; color: #4a1228; }
+  .ck-total .amount { font-size: 30px; font-weight: 800; color: #6b1d3a; letter-spacing: -1px; }
+  .ck-email { margin-top: 20px; }
+  .ck-email label { display: block; font-size: 12.5px; font-weight: 600; color: #8a6d78; margin-bottom: 6px; }
+  .ck-email input { width: 100%; padding: 13px 16px; border: 2px solid #f2d0dc; border-radius: 14px; font-size: 15px; font-family: inherit; background: #fff; transition: border-color 0.18s; }
+  .ck-email input:focus { outline: none; border-color: #6b1d3a; box-shadow: 0 0 0 4px rgba(107,29,58,0.08); }
+  .ck-pay-btn { width: 100%; margin-top: 20px; padding: 16px; background: linear-gradient(135deg, #6b1d3a, #8f2c51); color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; letter-spacing: 0.2px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; box-shadow: 0 8px 22px rgba(107,29,58,0.28); }
+  .ck-pay-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(107,29,58,0.36); }
+  .ck-pay-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
+  .ck-pay-btn .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ck-methods { margin-top: 18px; padding-top: 16px; border-top: 1px solid #f9e6ed; }
+  .ck-methods-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #8a6d78; margin-bottom: 10px; }
+  .ck-method-icons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ck-method-chip { background: #f9e6ed; border: 1px solid #f2d0dc; border-radius: 8px; padding: 6px 12px; font-size: 11.5px; font-weight: 600; color: #6b1d3a; }
+  .ck-method-note { font-size: 11px; color: #8a6d78; margin-top: 10px; line-height: 1.5; }
+  .ck-legal { margin-top: 16px; font-size: 11.5px; color: #8a6d78; text-align: center; line-height: 1.7; }
+  .ck-legal a { color: #6b1d3a; text-decoration: none; font-weight: 600; }
+  .ck-legal a:hover { text-decoration: underline; }
+  .ck-status { max-width: 560px; margin: 40px auto; text-align: center; }
+  .ck-status .icon { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 36px; }
+  .ck-status .icon.success { background: #e6f7ee; color: #1f7a4d; }
+  .ck-status .icon.failed { background: #fdecea; color: #b3261e; }
+  .ck-status .icon.pending { background: #fff4e5; color: #b56a00; }
+  .ck-status h2 { font-size: 28px; font-weight: 800; color: #4a1228; margin: 0 0 8px; letter-spacing: -0.5px; }
+  .ck-status > p { color: #8a6d78; margin: 0 0 28px; font-size: 15px; }
+  .ck-receipt { background: #fff; border-radius: 20px; border: 1px solid #f9e6ed; box-shadow: 0 8px 28px rgba(107,29,58,0.12); padding: 24px; text-align: left; margin-bottom: 24px; }
+  .ck-receipt-row { display: flex; justify-content: space-between; padding: 9px 0; font-size: 14px; border-bottom: 1px dashed #f2d0dc; }
+  .ck-receipt-row:last-child { border-bottom: none; }
+  .ck-receipt-row .label { color: #8a6d78; }
+  .ck-receipt-row .value { font-weight: 600; word-break: break-all; text-align: right; }
+  .ck-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .ck-btn-secondary { padding: 13px 24px; background: #fff; color: #6b1d3a; border: 2px solid #f2d0dc; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .ck-btn-secondary:hover { background: #f9e6ed; border-color: #6b1d3a; }
+  .ck-btn-primary { padding: 13px 24px; background: #6b1d3a; color: #fff; border: none; border-radius: 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .ck-btn-primary:hover { background: #4a1228; }
+  .ck-alert { padding: 12px 16px; border-radius: 14px; font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
+  .ck-alert-error { background: #fdecea; color: #b3261e; border: 1px solid #f5c6c0; }
+  .ck-close { position: fixed; top: 18px; right: 20px; z-index: 210; background: #fff; border: 1px solid #f2d0dc; width: 40px; height: 40px; border-radius: 50%; font-size: 18px; cursor: pointer; color: #6b1d3a; box-shadow: 0 4px 14px rgba(107,29,58,0.15); }
+
+  /* ───────── PHOTO GALLERY STYLES ───────── */
+  .photo-gallery { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .photo-slot { position: relative; width: 100px; height: 100px; border-radius: 12px; overflow: hidden; border: 2px dashed #f3d1e0; background: #fdf2f8; display: flex; align-items: center; justify-content: center; transition: border-color 0.2s; cursor: pointer; }
+  .photo-slot:hover { border-color: #ec4899; }
+  .photo-slot img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-slot .photo-placeholder { font-size: 28px; color: #d1b6c2; }
+  .photo-slot .photo-badge { position: absolute; top: 4px; left: 4px; background: rgba(190,24,93,0.85); color: white; font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.3px; }
+  .photo-slot .photo-remove { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border: none; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .photo-slot .photo-remove:hover { background: #ef4444; }
+  .photo-slot.photo-cover { border-style: solid; border-color: #3b82f6; }
+  .photo-slot.photo-profile { border-style: solid; border-color: #be185d; }
+  .photo-input-hidden { display: none; }
+  .photo-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .photo-actions button { font-size: 11px; padding: 5px 10px; }
+  .photo-msg { font-size: 12px; margin-top: 6px; }
+  .password-toggle-wrapper { position: relative; }
+  .password-toggle-wrapper input { padding-right: 42px; }
+  .password-toggle-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; color: #9ca3af; padding: 4px; line-height: 1; }
+  .password-toggle-btn:hover { color: #be185d; }
+  .password-toggles-section { margin-top: 16px; padding: 12px 16px; background: #fdf2f8; border-radius: 10px; border: 1px solid #fce7f3; }
+  .password-toggles-section h4 { margin: 0 0 8px; font-size: 13px; color: #831843; font-weight: 700; }
+  .password-toggles-section label { font-size: 12px; margin: 6px 0; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .password-toggles-section input[type="checkbox"] { accent-color: #ec4899; width: auto; }
+
+  /* ───────── photo display in cards/modal ───────── */
+  .profile-photo-strip { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
+  .profile-photo-strip img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1.5px solid #fce7f3; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ WELCOME / LANDING PAGE (shown first) ═══════════ -->
+<div class="welcome" id="welcome-page">
+  <div class="welcome-bg" id="welcome-bg"></div>
+  <div class="welcome-content">
+    <div class="welcome-top">
+      <div class="welcome-logo">
+        <span class="logo-mark">💕</span>
+        CampusConnect
+      </div>
+      <div class="welcome-top-actions">
+        <button id="welcome-login-btn">Log In</button>
+        <button class="solid" id="welcome-signup-btn">Sign Up</button>
+      </div>
+    </div>
+
+    <div class="welcome-hero">
+      <div class="welcome-badge">💖 KENYA'S #1 CAMPUS CONNECT</div>
+      <h1>Where campus <span class="accent">love stories</span> begin.</h1>
+      <p>Join thousands of students and alumni finding friendship, romance and meaningful connections across universities, colleges and TVETs — all in one safe, verified space.</p>
+      <div class="welcome-cta-row">
+        <button class="welcome-cta" id="welcome-cta-signup">Start Your Story →</button>
+        <button class="welcome-cta ghost" id="welcome-cta-login">I Already Have an Account</button>
+      </div>
+    </div>
+
+    <div class="welcome-collage-label">Real couples, real connections</div>
+    <div class="welcome-collage" id="welcome-collage"></div>
+
+    <div class="welcome-stats">
+      <div><strong id="welcome-stat-members">12,400+</strong><span>Members</span></div>
+      <div><strong>230+</strong><span>Institutions</span></div>
+      <div><strong>47</strong><span>Counties</span></div>
+      <div><strong>4.9★</strong><span>Love Rating</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MAIN APP ═══════════ -->
+<header>
+  <h1>💕 CampusConnect</h1>
+  <div class="header-user" id="header-user"></div>
+  <div class="tabs" id="main-tabs"></div>
+  <div class="auth-top-bar" id="auth-top-bar"></div>
+</header>
+
+<main>
+  <!-- AUTH -->
+  <section id="view-auth" class="section-hidden">
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <h2 id="auth-title">Welcome to CampusConnect</h2>
+        <div class="auth-sub" id="auth-sub">Create your account to find your people on campus</div>
+        <div class="auth-tabs">
+          <button id="auth-tab-signup" class="active">Sign Up</button>
+          <button id="auth-tab-login">Log In</button>
+          <button id="auth-tab-forgot">Forgot Password</button>
+        </div>
+        <div id="auth-msg"></div>
+
+        <form id="signup-form">
+          <label>Username (unique)</label>
+          <input type="text" id="su-username" placeholder="e.g. jane_d" required />
+          <div class="field-error" id="su-username-error"></div>
+          <label>Display name</label>
+          <input type="text" id="su-name" placeholder="Jane Doe" required />
+          <label>Email address</label>
+          <input type="email" id="su-email" placeholder="jane@example.com" required />
+          <div class="field-error" id="su-email-error"></div>
+          <label>Country</label>
+          <select id="su-country" required></select>
+          <label>Phone number</label>
+          <div class="phone-row">
+            <select id="su-dialcode" disabled><option>+254</option></select>
+            <input type="tel" id="su-phone" placeholder="712 345 678" required />
+          </div>
+          <label>Password</label>
+          <div class="password-toggle-wrapper">
+            <input type="password" id="su-password" placeholder="Create a password" required />
+            <button type="button" class="password-toggle-btn" data-target="su-password">👁️</button>
+          </div>
+          <label>Confirm password</label>
+          <div class="password-toggle-wrapper">
+            <input type="password" id="su-password2" placeholder="Repeat password" required />
+            <button type="button" class="password-toggle-btn" data-target="su-password2">👁️</button>
+          </div>
+          <div id="su-verify-code-wrapper" class="section-hidden">
+            <label>Verification code (sent to your email)</label>
+            <input type="text" id="su-verify-code" placeholder="Enter 6-digit code" maxlength="6" />
+            <div class="hint" id="su-code-hint"></div>
+          </div>
+          <div class="password-toggles-section">
+            <h4>🔐 Password visibility</h4>
+            <label><input type="checkbox" id="toggle-all-signup-passwords" /> Show all passwords on this form</label>
+          </div>
+          <div style="margin-top:20px;">
+            <button type="submit" class="btn btn-full" id="su-submit-btn">Create Account →</button>
+          </div>
+          <div style="margin-top:14px;text-align:center;">
+            <button type="button" class="link-btn" id="back-to-welcome-signup">← Back to welcome</button>
+          </div>
+        </form>
+
+        <form id="login-form" class="section-hidden">
+          <label>Username, email or phone</label>
+          <input type="text" id="li-identifier" placeholder="username / email / phone" required />
+          <label>Password</label>
+          <div class="password-toggle-wrapper">
+            <input type="password" id="li-password" placeholder="Your password" required />
+            <button type="button" class="password-toggle-btn" data-target="li-password">👁️</button>
+          </div>
+          <div class="password-toggles-section">
+            <h4>🔐 Password visibility</h4>
+            <label><input type="checkbox" id="toggle-login-password" /> Show password</label>
+          </div>
+          <div style="margin-top:12px;text-align:right;">
+            <button type="button" class="link-btn" id="go-forgot-link">Forgot password?</button>
+          </div>
+          <div style="margin-top:20px;">
+            <button type="submit" class="btn btn-full">Log In →</button>
+          </div>
+          <div style="margin-top:14px;text-align:center;">
+            <button type="button" class="link-btn" id="back-to-welcome-login">← Back to welcome</button>
+          </div>
+        </form>
+
+        <form id="forgot-form" class="section-hidden">
+          <div class="auth-info">Enter the email you signed up with. We'll send a 6-digit verification code.</div>
+          <label>Email address</label>
+          <input type="email" id="fp-email" placeholder="jane@example.com" required />
+          <div id="fp-step1">
+            <div style="margin-top:20px;">
+              <button type="button" class="btn btn-full" id="fp-request-code-btn">Send Verification Code →</button>
+            </div>
+          </div>
+          <div id="fp-step2" class="section-hidden">
+            <label>Verification code</label>
+            <input type="text" id="fp-code" placeholder="Enter 6-digit code" maxlength="6" />
+            <div class="hint" id="fp-code-hint"></div>
+            <label>New password</label>
+            <div class="password-toggle-wrapper">
+              <input type="password" id="fp-newpass" placeholder="Enter new password" required />
+              <button type="button" class="password-toggle-btn" data-target="fp-newpass">👁️</button>
+            </div>
+            <label>Confirm new password</label>
+            <div class="password-toggle-wrapper">
+              <input type="password" id="fp-newpass2" placeholder="Repeat new password" required />
+              <button type="button" class="password-toggle-btn" data-target="fp-newpass2">👁️</button>
+            </div>
+            <div class="password-toggles-section">
+              <h4>🔐 Password visibility</h4>
+              <label><input type="checkbox" id="toggle-all-reset-passwords" /> Show both passwords</label>
+            </div>
+            <div style="margin-top:20px;">
+              <button type="submit" class="btn btn-full" id="fp-reset-btn">Reset Password →</button>
+            </div>
+          </div>
+          <div style="margin-top:14px;text-align:center;">
+            <button type="button" class="link-btn" id="back-to-login">← Back to Log In</button>
+          </div>
+          <div style="margin-top:8px;text-align:center;">
+            <button type="button" class="link-btn" id="back-to-welcome-forgot">← Back to welcome</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ONBOARDING -->
+  <section id="view-onboarding" class="section-hidden">
+    <div style="max-width:820px;margin:0 auto;">
+      <div class="card">
+        <h2>👋 Welcome, <span id="onboard-name"></span>!</h2>
+        <p class="hint" style="font-size:14px;line-height:1.6;">Let's set up your profile. You can skip any field and edit later.</p>
+        <fieldset>
+          <legend>About You</legend>
+          <label>Age</label>
+          <input type="number" id="ob-age" min="18" max="100" placeholder="24" />
+          <label>Gender</label>
+          <select id="ob-gender">
+            <option value="">Prefer not to say</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+          </select>
+          <label>County / Region</label>
+          <select id="ob-county"><option value="">Select county / region…</option></select>
+          <label>Town</label>
+          <input type="text" id="ob-town" placeholder="e.g. Westlands" />
+          <label>Relationship preference</label>
+          <select id="ob-rel">
+            <option value="">Any</option>
+            <option value="friendship">Friendship</option>
+            <option value="dating">Dating</option>
+            <option value="long-term">Long-term</option>
+            <option value="marriage">Marriage</option>
+          </select>
+          <label>Hobbies & Interests</label>
+          <textarea id="ob-hobbies" placeholder="e.g. Hiking, Reading, Football, Cooking…"></textarea>
+        </fieldset>
+
+        <!-- Photo Gallery (onboarding) -->
+        <fieldset>
+          <legend>📸 Profile Photos (min 2, max 5)</legend>
+          <div class="hint" style="margin-bottom:10px;">Set a profile photo and cover photo, then add up to 3 more. You need at least 2 photos total.</div>
+          <div class="photo-gallery" id="ob-photo-gallery"></div>
+          <div class="photo-actions" id="ob-photo-actions"></div>
+          <div class="hint photo-msg" id="ob-photo-msg"></div>
+          <input type="file" id="ob-photo-input" class="photo-input-hidden" accept="image/*" />
+          <div class="photo-slot photo-cover section-hidden" id="ob-cover-preview-slot" style="width:140px;height:80px;margin-top:10px;"></div>
+          <div class="hint" style="margin-top:4px;">Cover photo is displayed at the top of your profile card.</div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Lifestyle (Optional)</legend>
+          <label>Smoking</label>
+          <select id="ob-smoking">
+            <option value="">Prefer not to say</option>
+            <option value="never">Never</option>
+            <option value="occasionally">Occasionally</option>
+            <option value="regularly">Regularly</option>
+            <option value="trying-to-quit">Trying to quit</option>
+          </select>
+          <label>Drinking alcohol</label>
+          <select id="ob-drinking">
+            <option value="">Prefer not to say</option>
+            <option value="never">Never</option>
+            <option value="socially">Socially</option>
+            <option value="regularly">Regularly</option>
+            <option value="trying-to-quit">Trying to quit</option>
+          </select>
+        </fieldset>
+        <fieldset>
+          <legend>Institution (Optional)</legend>
+          <div class="hint" style="margin-bottom:10px;">Type to search our list. Can't find yours? Click <strong>"Add manually"</strong> — any institution from any country is welcome.</div>
+          <label>Institution name</label>
+          <div class="autocomplete">
+            <input type="text" id="ob-inst-name" placeholder="e.g. JKUAT, University of Nairobi, Oxford…" autocomplete="off" />
+            <div class="autocomplete-list section-hidden" id="ob-inst-suggestions"></div>
+          </div>
+          <label>Country of institution</label>
+          <select id="ob-inst-country"></select>
+          <label>Institution type</label>
+          <select id="ob-inst-type">
+            <option value="">Select type…</option>
+            <option>University</option>
+            <option>College</option>
+            <option>TVET</option>
+            <option>Polytechnic</option>
+            <option>Other</option>
+          </select>
+          <label>Campus (optional)</label>
+          <input type="text" id="ob-inst-campus" placeholder="e.g. Main Campus" />
+          <div class="checkbox-row">
+            <input type="checkbox" id="ob-inst-visible" />
+            <label for="ob-inst-visible">Show my institution on my public profile</label>
+          </div>
+        </fieldset>
+        <button class="btn btn-full" id="onboard-save">Save & Continue →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERIFY -->
+  <section id="view-verify" class="section-hidden">
+    <div style="max-width:820px;margin:0 auto;">
+      <div class="card">
+        <h2 style="text-align:center;">✨ Choose Your Verified Batch</h2>
+        <p style="text-align:center;color:#6b7280;font-size:14px;line-height:1.6;margin-bottom:8px;">Stand out with a <strong>Verified batch</strong> on your profile.<br/>Choose a plan below.</p>
+        <div class="batch-grid" id="batch-grid">
+          <div class="batch-option" data-plan="1month">
+            <div class="batch-badge">Most Popular</div>
+            <h4>1 Month</h4>
+            <div class="batch-price">KSh 300 <span>/ month</span></div>
+            <p>Verified badge for 30 days.</p>
+          </div>
+          <div class="batch-option" data-plan="3months">
+            <h4>3 Months</h4>
+            <div class="batch-price">KSh 800 <span>/ 3 months</span></div>
+            <p>Save KSh 100. Verified for 90 days.</p>
+          </div>
+          <div class="batch-option" data-plan="6months">
+            <h4>6 Months</h4>
+            <div class="batch-price">KSh 1,500 <span>/ 6 months</span></div>
+            <p>Save KSh 300. Verified for 180 days.</p>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" id="verify-skip" style="flex:1;">Skip for now</button>
+          <button class="btn btn-paystack" id="pay-paystack-btn" style="flex:1;" disabled>💳 Pay with Paystack</button>
+          <button class="btn btn-binance" id="pay-binance-btn" style="flex:1;" disabled>₿ Pay with Binance Pay</button>
+        </div>
+        <div id="verify-msg" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME -->
+  <section id="view-home" class="section-hidden">
+    <div class="hero" id="hero-bg">
+      <div class="hero-inner">
+        <div class="hero-badge">💖 KENYA'S #1 CAMPUS CONNECT</div>
+        <h1>Find your <span class="accent">special someone</span> on campus.</h1>
+        <p>Connect with students and alumni from universities, colleges, TVET and polytechnics across all 47 counties — and beyond. Search by institution, hobbies, location and more.</p>
+        <div class="hero-cta-row">
+          <button class="cta" id="hero-cta">Edit Your Profile</button>
+          <button class="cta-ghost" id="hero-cta2">Discover Members</button>
+        </div>
+        <div class="hero-stats">
+          <div><strong id="stat-users">0</strong><span>MEMBERS</span></div>
+          <div><strong id="stat-inst">0</strong><span>INSTITUTIONS</span></div>
+          <div><strong id="stat-counties">47</strong><span>COUNTIES</span></div>
+          <div><strong id="stat-verified">0</strong><span>VERIFIED</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      <h2>💞 Real Connections, Real People</h2>
+      <span style="color:#9ca3af;font-size:12px;">Made on CampusConnect</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+      <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(190,24,93,0.12);">
+        <img src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=400&h=300&fit=crop&crop=faces" alt="Couple laughing together" style="width:100%;height:200px;object-fit:cover;display:block;" />
+        <div style="padding:12px 14px;background:white;font-size:13px;color:#4b5563;">"We met on CampusConnect — now we're inseparable! 💕" <br/><strong style="color:#be185d;">— Alice & Brian</strong></div>
+      </div>
+      <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(190,24,93,0.12);">
+        <img src="https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=400&h=300&fit=crop&crop=faces" alt="Couple embracing outdoors" style="width:100%;height:200px;object-fit:cover;display:block;" />
+        <div style="padding:12px 14px;background:white;font-size:13px;color:#4b5563;">"Found my study buddy... and my soulmate. 📚❤️" <br/><strong style="color:#be185d;">— Cynthia & David</strong></div>
+      </div>
+      <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(190,24,93,0.12);">
+        <img src="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400&h=300&fit=crop&crop=faces" alt="Young couple smiling close" style="width:100%;height:200px;object-fit:cover;display:block;" />
+        <div style="padding:12px 14px;background:white;font-size:13px;color:#4b5563;">"Campus love is real — and it started here. 🌹" <br/><strong style="color:#be185d;">— Esther & Felix</strong></div>
+      </div>
+      <div style="border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(190,24,93,0.12);">
+        <img src="https://images.unsplash.com/photo-1511406361295-0a1ff814c0ce?w=400&h=300&fit=crop&crop=faces" alt="Couple holding hands, smiling" style="width:100%;height:200px;object-fit:cover;display:block;" />
+        <div style="padding:12px 14px;background:white;font-size:13px;color:#4b5563;">"From a simple hello to forever. 🥂" <br/><strong style="color:#be185d;">— Irene & James</strong></div>
+      </div>
+    </div>
+
+    <div class="safety-banner">
+      <div class="safety-icon">🛡️</div>
+      <div>
+        <strong>Stay safe:</strong> Never share phone numbers, social media handles, or personal contact info in chats.
+        Our system automatically blocks these for your protection. Abusive language is also prohibited.
+      </div>
+    </div>
+
+    <div class="verify-card" id="verify-card">
+      <h3>✨ Get Verified — Stand Out!</h3>
+      <p>Get a <strong>Verified batch</strong> on your profile for 30 days.<br/>Show others you're a real, trusted member.</p>
+      <div class="verify-price">KSh 300 <span>/ month</span></div>
+      <button class="btn btn-blue" id="subscribe-verify-btn">Subscribe & Get Verified →</button>
+      <div id="home-verify-msg" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="section-title">
+      <h2>✨ Featured Members</h2>
+      <a id="see-all-link">See all on Discover →</a>
+    </div>
+    <div class="featured-grid" id="featured-grid"></div>
+  </section>
+
+  <!-- EDIT PROFILE -->
+  <section id="view-register" class="section-hidden">
+    <div class="card" style="max-width:760px;margin:0 auto;">
+      <h2>Edit Your Profile</h2>
+      <div id="reg-msg"></div>
+      <fieldset>
+        <legend>Basic Info</legend>
+        <label>Display name</label>
+        <input type="text" id="reg-name" placeholder="Jane Doe" />
+        <label>Age</label>
+        <input type="number" id="reg-age" min="18" max="100" placeholder="24" />
+        <label>Gender</label>
+        <select id="reg-gender">
+          <option value="">Prefer not to say</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="other">Other</option>
+        </select>
+        <label>County / Region</label>
+        <select id="reg-county"><option value="">Select county / region…</option></select>
+        <label>Town</label>
+        <input type="text" id="reg-town" placeholder="e.g. Westlands" />
+        <label>Relationship preference</label>
+        <select id="reg-rel">
+          <option value="">Any</option>
+          <option value="friendship">Friendship</option>
+          <option value="dating">Dating</option>
+          <option value="long-term">Long-term</option>
+          <option value="marriage">Marriage</option>
+        </select>
+        <label>Hobbies & Interests</label>
+        <textarea id="reg-hobbies" placeholder="e.g. Hiking, Reading…"></textarea>
+      </fieldset>
+
+      <!-- Photo Gallery (edit profile) -->
+      <fieldset>
+        <legend>📸 Profile Photos (min 2, max 5)</legend>
+        <div class="hint" style="margin-bottom:10px;">Set a profile photo and cover photo, then add up to 3 more. You need at least 2 photos total.</div>
+        <div class="photo-gallery" id="reg-photo-gallery"></div>
+        <div class="photo-actions" id="reg-photo-actions"></div>
+        <div class="hint photo-msg" id="reg-photo-msg"></div>
+        <input type="file" id="reg-photo-input" class="photo-input-hidden" accept="image/*" />
+        <div class="photo-slot photo-cover section-hidden" id="reg-cover-preview-slot" style="width:140px;height:80px;margin-top:10px;"></div>
+        <div class="hint" style="margin-top:4px;">Cover photo is displayed at the top of your profile card.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Lifestyle (Optional)</legend>
+        <label>Smoking</label>
+        <select id="reg-smoking">
+          <option value="">Prefer not to say</option>
+          <option value="never">Never</option>
+          <option value="occasionally">Occasionally</option>
+          <option value="regularly">Regularly</option>
+          <option value="trying-to-quit">Trying to quit</option>
+        </select>
+        <label>Drinking alcohol</label>
+        <select id="reg-drinking">
+          <option value="">Prefer not to say</option>
+          <option value="never">Never</option>
+          <option value="socially">Socially</option>
+          <option value="regularly">Regularly</option>
+          <option value="trying-to-quit">Trying to quit</option>
+        </select>
+      </fieldset>
+      <fieldset>
+        <legend>Institution (optional)</legend>
+        <div class="hint" style="margin-bottom:10px;">Can't find your institution? Type the name and click <strong>"Add manually"</strong>.</div>
+        <label>Institution name</label>
+        <div class="autocomplete">
+          <input type="text" id="inst-name" placeholder="e.g. JKUAT, Oxford, MIT…" autocomplete="off" />
+          <div class="autocomplete-list section-hidden" id="inst-suggestions"></div>
+        </div>
+        <label>Country of institution</label>
+        <select id="inst-country"></select>
+        <label>Institution type</label>
+        <select id="inst-type">
+          <option value="">Select type…</option>
+          <option>University</option>
+          <option>College</option>
+          <option>TVET</option>
+          <option>Polytechnic</option>
+          <option>Other</option>
+        </select>
+        <label>Campus (optional)</label>
+        <input type="text" id="inst-campus" placeholder="e.g. Main Campus" />
+        <div class="checkbox-row">
+          <input type="checkbox" id="inst-visible" />
+          <label for="inst-visible">Show my institution on my public profile</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Private Contact Info</legend>
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="jane@example.com" />
+        <label>Country</label>
+        <select id="reg-country"></select>
+        <label>Phone number</label>
+        <div class="phone-row">
+          <select id="reg-dialcode" disabled><option>+254</option></select>
+          <input type="tel" id="reg-phone" placeholder="712 345 678" />
+        </div>
+      </fieldset>
+      <button class="btn" id="reg-save">Save Profile</button>
+    </div>
+  </section>
+
+  <!-- DISCOVER -->
+  <section id="view-discover" class="section-hidden">
+    <div class="layout">
+      <aside>
+        <div class="card">
+          <h2>Advanced Search</h2>
+          <label>Age range</label>
+          <div class="range-row">
+            <input type="number" id="f-age-min" placeholder="Min" min="18" />
+            <span>–</span>
+            <input type="number" id="f-age-max" placeholder="Max" min="18" />
+          </div>
+          <label>Gender</label>
+          <select id="f-gender">
+            <option value="">Any</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="other">Other</option>
+          </select>
+          <label>County / Region</label>
+          <select id="f-county"><option value="">Any</option></select>
+          <label>Town</label>
+          <input type="text" id="f-town" placeholder="Any town" />
+          <label>Institution name</label>
+          <div class="autocomplete">
+            <input type="text" id="f-inst" placeholder="Search institutions…" autocomplete="off" />
+            <div class="autocomplete-list section-hidden" id="f-inst-suggestions"></div>
+          </div>
+          <div class="chips" id="f-inst-chips"></div>
+          <label>Institution type</label>
+          <select id="f-inst-type">
+            <option value="">Any</option>
+            <option>University</option>
+            <option>College</option>
+            <option>TVET</option>
+            <option>Polytechnic</option>
+            <option>Other</option>
+          </select>
+          <label>Campus</label>
+          <input type="text" id="f-campus" placeholder="Any campus" />
+          <label>Relationship preference</label>
+          <select id="f-rel">
+            <option value="">Any</option>
+            <option value="friendship">Friendship</option>
+            <option value="dating">Dating</option>
+            <option value="long-term">Long-term</option>
+            <option value="marriage">Marriage</option>
+          </select>
+          <div class="checkbox-row">
+            <input type="checkbox" id="f-online" />
+            <label for="f-online">Online now only</label>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="f-verified" />
+            <label for="f-verified">Verified members only</label>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="f-no-inst" />
+            <label for="f-no-inst">Users with no institution</label>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:18px;">
+            <button class="btn" id="f-search">Search</button>
+            <button class="btn btn-ghost" id="f-reset">Reset</button>
+          </div>
+        </div>
+      </aside>
+      <div>
+        <div class="results-header">
+          <h2>Results</h2>
+          <span class="count" id="results-count"></span>
+        </div>
+        <div id="results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAT -->
+  <section id="view-chat" class="section-hidden">
+    <div class="chat-layout">
+      <aside class="chat-sidebar">
+        <div class="chat-sidebar-header">💬 Conversations</div>
+        <div class="chat-list" id="chat-list"></div>
+      </aside>
+      <div class="chat-main" id="chat-main">
+        <div class="chat-empty" id="chat-empty">
+          <div class="big-icon">💌</div>
+          <h3 style="margin:0 0 8px;color:#831843;">Select a conversation</h3>
+          <p style="margin:0;">Choose a member to start chatting.<br/>Send text, photos, or voice notes!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Paystack checkout overlay -->
+<div class="checkout-page" id="checkout-page">
+  <button class="ck-close" id="ck-close" title="Close checkout">✕</button>
+  <div class="checkout-shell">
+    <div class="ck-brand">
+      <div class="ck-logo"><span class="mark">💕</span> CampusConnect</div>
+      <span class="ck-secure">🔒 Secure Checkout</span>
+    </div>
+    <div id="ck-view-checkout">
+      <div class="ck-hero">
+        <h1>Complete Your Membership</h1>
+        <p>Choose your plan and unlock more opportunities to connect.</p>
+      </div>
+      <div id="ck-alert" class="ck-alert ck-alert-error" style="display:none;"></div>
+      <div class="ck-grid">
+        <div class="ck-panel">
+          <div class="ck-panel-title">Select a Plan</div>
+          <div class="ck-plans" id="ck-plan-list"></div>
+        </div>
+        <div class="ck-panel ck-summary">
+          <div class="ck-panel-title">Order Summary</div>
+          <div class="ck-row"><span class="label">Selected Plan</span><span class="value" id="ck-sum-plan">—</span></div>
+          <div class="ck-row"><span class="label">Duration</span><span class="value" id="ck-sum-duration">—</span></div>
+          <div class="ck-row"><span class="label">Price</span><span class="value" id="ck-sum-price">—</span></div>
+          <div class="ck-total"><span class="label">Total</span><span class="amount" id="ck-sum-total">KSh 0</span></div>
+          <div class="ck-email">
+            <label for="ck-email">Email for receipt</label>
+            <input type="email" id="ck-email" placeholder="you@example.com" autocomplete="email">
+          </div>
+          <button class="ck-pay-btn" id="ck-pay-btn" disabled>
+            <span id="ck-pay-btn-text">Pay Securely</span>
+          </button>
+          <div class="ck-methods">
+            <div class="ck-methods-title">Payment Methods</div>
+            <div class="ck-method-icons">
+              <span class="ck-method-chip">Visa</span>
+              <span class="ck-method-chip">Mastercard</span>
+              <span class="ck-method-chip">Verve</span>
+              <span class="ck-method-chip">M-PESA</span>
+              <span class="ck-method-chip">Mobile Money</span>
+            </div>
+            <p class="ck-method-note">Available methods depend on your location and Paystack account configuration. Kenyan customers can pay via M-PESA and cards in KES.</p>
+          </div>
+          <div class="ck-legal">
+            By paying, you agree to our <a href="/terms" target="_blank">Terms</a>,
+            <a href="/privacy" target="_blank">Privacy Policy</a>, and
+            <a href="/refunds" target="_blank">Refund Policy</a>.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="ck-view-success" class="ck-status" style="display:none;">
+      <div class="icon success">✓</div>
+      <h2>Payment Successful!</h2>
+      <p>Welcome to Premium Membership. Your subscription is now active.</p>
+      <div class="ck-receipt" id="ck-receipt"></div>
+      <div class="ck-actions">
+        <button class="ck-btn-primary" id="ck-go-dashboard">Go to Dashboard</button>
+        <button class="ck-btn-secondary" id="ck-go-discover">Discover Members</button>
+        <button class="ck-btn-secondary" id="ck-view-receipt">View Payment Receipt</button>
+      </div>
+    </div>
+    <div id="ck-view-failure" class="ck-status" style="display:none;">
+      <div class="icon failed">✕</div>
+      <h2 id="ck-fail-title">Payment Failed</h2>
+      <p id="ck-fail-message">Your payment could not be completed. No subscription was activated.</p>
+      <div class="ck-actions">
+        <button class="ck-btn-primary" id="ck-retry-btn">Retry Payment</button>
+        <button class="ck-btn-secondary" id="ck-home-btn">Return Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+/* =================================================================
+   WELCOME / LANDING PAGE LOGIC
+   ================================================================= */
+const WELCOME_IMAGES = [
+  'https://images.unsplash.com/photo-1516575334481-f85287c2c82d?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1511406361295-0a1ff814c0ce?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1522098543979-ffc7f79a56c4?w=1600&h=1000&fit=crop',
+  'https://images.unsplash.com/photo-1501901609772-df0848060b33?w=1600&h=1000&fit=crop'
+];
+let welcomeIndex = 0;
+const welcomeBg = document.getElementById('welcome-bg');
+function rotateWelcomeBg() {
+  welcomeBg.style.backgroundImage = `url('${WELCOME_IMAGES[welcomeIndex]}')`;
+  welcomeIndex = (welcomeIndex + 1) % WELCOME_IMAGES.length;
+}
+rotateWelcomeBg();
+setInterval(rotateWelcomeBg, 5500);
+
+/* Collage cards with loving couple photos + captions */
+const COLLAGE = [
+  { img: 'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=500&h=650&fit=crop&crop=faces', caption: '“We met on CampusConnect — now we’re inseparable!”', couple: 'Alice & Brian' },
+  { img: 'https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=500&h=650&fit=crop&crop=faces', caption: '“Found my study buddy… and my soulmate.”', couple: 'Cynthia & David' },
+  { img: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=500&h=650&fit=crop&crop=faces', caption: '“Campus love is real — and it started here.”', couple: 'Esther & Felix' },
+  { img: 'https://images.unsplash.com/photo-1511406361295-0a1ff814c0ce?w=500&h=650&fit=crop&crop=faces', caption: '“From a simple hello to forever.”', couple: 'Irene & James' },
+  { img: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=500&h=650&fit=crop&crop=faces', caption: '“One swipe changed everything.”', couple: 'Sarah & Peter' },
+  { img: 'https://images.unsplash.com/photo-1522098543979-ffc7f79a56c4?w=500&h=650&fit=crop&crop=faces', caption: '“We laughed, we talked, we fell in love.”', couple: 'Mercy & Kevin' },
+  { img: 'https://images.unsplash.com/photo-1501901609772-df0848060b33?w=500&h=650&fit=crop&crop=faces', caption: '“From classmates to soulmates.”', couple: 'Faith & Henry' },
+  { img: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&h=650&fit=crop&crop=faces', caption: '“The best thing campus gave me was you.”', couple: 'Diana & Michael' },
+];
+function renderCollage() {
+  const wrap = document.getElementById('welcome-collage');
+  wrap.innerHTML = '';
+  COLLAGE.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'collage-card';
+    card.innerHTML = `
+      <img src="${item.img}" alt="${escapeHtml(item.couple)}" loading="lazy" />
+      <div class="collage-heart">❤</div>
+      <div class="collage-caption">
+        <strong>${escapeHtml(item.couple)}</strong>
+        <span>${escapeHtml(item.caption)}</span>
+      </div>`;
+    wrap.appendChild(card);
+  });
+}
+renderCollage();
+
+/* Welcome page navigation */
+const welcomePage = document.getElementById('welcome-page');
+function hideWelcome() {
+  welcomePage.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function showWelcome() {
+  welcomePage.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+document.getElementById('welcome-signup-btn').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-signup').click(); });
+document.getElementById('welcome-login-btn').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-login').click(); });
+document.getElementById('welcome-cta-signup').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-signup').click(); });
+document.getElementById('welcome-cta-login').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-login').click(); });
+
+document.getElementById('back-to-welcome-signup').addEventListener('click', showWelcome);
+document.getElementById('back-to-welcome-login').addEventListener('click', showWelcome);
+document.getElementById('back-to-welcome-forgot').addEventListener('click', showWelcome);
+
+/* =================================================================
+   BACKEND (in-memory demo)
+   ================================================================= */
+const DB = {
+  institutions: [], profiles: [], users: [], conversations: {},
+  _instId: 1, _profId: 1, _msgId: 1, _userId: 1,
+  currentUser: null,
+  verification: { active: false, expiresAt: null },
+  pendingSignup: null,
+  pendingReset: null,
+};
+
+const REGIONS = [
+  "Nairobi City, Kenya","Mombasa, Kenya","Kisumu, Kenya","Nakuru, Kenya","Eldoret, Kenya","Thika, Kenya","Nyeri, Kenya","Meru, Kenya","Machakos, Kenya","Kakamega, Kenya",
+  "Kampala, Uganda","Entebbe, Uganda","Jinja, Uganda","Gulu, Uganda","Mbarara, Uganda",
+  "Kigali, Rwanda","Butare, Rwanda","Bujumbura, Burundi",
+  "Dar es Salaam, Tanzania","Dodoma, Tanzania","Arusha, Tanzania","Mwanza, Tanzania","Zanzibar, Tanzania",
+  "Addis Ababa, Ethiopia","Dire Dawa, Ethiopia","Mogadishu, Somalia","Hargeisa, Somalia","Juba, South Sudan","Khartoum, Sudan",
+  "Cairo, Egypt","Alexandria, Egypt","Lagos, Nigeria","Abuja, Nigeria","Kano, Nigeria","Ibadan, Nigeria",
+  "Accra, Ghana","Kumasi, Ghana","Johannesburg, South Africa","Cape Town, South Africa","Durban, South Africa","Pretoria, South Africa",
+  "Casablanca, Morocco","Rabat, Morocco","Marrakesh, Morocco","Tunis, Tunisia","Algiers, Algeria","Oran, Algeria",
+  "Lusaka, Zambia","Harare, Zimbabwe","Gaborone, Botswana","Windhoek, Namibia","Lilongwe, Malawi","Maputo, Mozambique",
+  "Douala, Cameroon","Yaoundé, Cameroon","Dakar, Senegal","Abidjan, Côte d'Ivoire","Kinshasa, DR Congo","Brazzaville, Congo",
+  "Luanda, Angola","Antananarivo, Madagascar","Port Louis, Mauritius","Victoria, Seychelles","Maseru, Lesotho","Mbabane, Eswatini",
+  "London, United Kingdom","Manchester, United Kingdom","Birmingham, United Kingdom","Glasgow, United Kingdom","Edinburgh, United Kingdom","Dublin, Ireland",
+  "Paris, France","Marseille, France","Lyon, France","Berlin, Germany","Munich, Germany","Hamburg, Germany",
+  "Madrid, Spain","Barcelona, Spain","Rome, Italy","Milan, Italy","Naples, Italy","Amsterdam, Netherlands","Rotterdam, Netherlands",
+  "Brussels, Belgium","Antwerp, Belgium","Vienna, Austria","Zurich, Switzerland","Geneva, Switzerland","Stockholm, Sweden",
+  "Oslo, Norway","Copenhagen, Denmark","Helsinki, Finland","Athens, Greece","Lisbon, Portugal","Porto, Portugal",
+  "Warsaw, Poland","Krakow, Poland","Prague, Czech Republic","Budapest, Hungary","Bucharest, Romania","Sofia, Bulgaria",
+  "Belgrade, Serbia","Zagreb, Croatia","Sarajevo, Bosnia","Skopje, North Macedonia","Tirana, Albania","Moscow, Russia",
+  "Saint Petersburg, Russia","Kyiv, Ukraine","Minsk, Belarus","Vilnius, Lithuania","Riga, Latvia","Tallinn, Estonia",
+  "New York City, USA","Los Angeles, USA","Chicago, USA","Houston, USA","Phoenix, USA","Philadelphia, USA","San Antonio, USA","San Diego, USA",
+  "Dallas, USA","San Jose, USA","Austin, USA","Jacksonville, USA","Fort Worth, USA","Columbus, USA","Charlotte, USA","Indianapolis, USA",
+  "San Francisco, USA","Seattle, USA","Denver, USA","Washington, D.C., USA","Boston, USA","El Paso, USA","Nashville, USA","Detroit, USA",
+  "Toronto, Canada","Montreal, Canada","Vancouver, Canada","Calgary, Canada","Edmonton, Canada","Ottawa, Canada","Winnipeg, Canada","Quebec City, Canada",
+  "Mexico City, Mexico","Guadalajara, Mexico","Monterrey, Mexico","Puebla, Mexico","Tijuana, Mexico",
+  "São Paulo, Brazil","Rio de Janeiro, Brazil","Brasília, Brazil","Salvador, Brazil","Buenos Aires, Argentina","Córdoba, Argentina","Rosario, Argentina",
+  "Santiago, Chile","Valparaíso, Chile","Lima, Peru","Arequipa, Peru","Bogotá, Colombia","Medellín, Colombia","Cali, Colombia",
+  "Caracas, Venezuela","Maracaibo, Venezuela","Quito, Ecuador","Guayaquil, Ecuador","La Paz, Bolivia","Santa Cruz, Bolivia",
+  "Asunción, Paraguay","Montevideo, Uruguay",
+  "Tokyo, Japan","Osaka, Japan","Nagoya, Japan","Sapporo, Japan","Seoul, South Korea","Busan, South Korea","Incheon, South Korea",
+  "Beijing, China","Shanghai, China","Guangzhou, China","Shenzhen, China","Chengdu, China","Hong Kong","Macau","Taipei, Taiwan",
+  "Singapore","Kuala Lumpur, Malaysia","Bangkok, Thailand","Jakarta, Indonesia","Manila, Philippines","Cebu, Philippines",
+  "Hanoi, Vietnam","Ho Chi Minh City, Vietnam","Phnom Penh, Cambodia","Vientiane, Laos","Yangon, Myanmar","Dhaka, Bangladesh","Chittagong, Bangladesh",
+  "New Delhi, India","Mumbai, India","Kolkata, India","Chennai, India","Bangalore, India","Hyderabad, India","Pune, India","Ahmedabad, India","Jaipur, India",
+  "Karachi, Pakistan","Lahore, Pakistan","Islamabad, Pakistan","Colombo, Sri Lanka","Kathmandu, Nepal","Thimphu, Bhutan","Malé, Maldives",
+  "Dubai, UAE","Abu Dhabi, UAE","Sharjah, UAE","Riyadh, Saudi Arabia","Jeddah, Saudi Arabia","Dammam, Saudi Arabia",
+  "Doha, Qatar","Kuwait City, Kuwait","Manama, Bahrain","Muscat, Oman","Amman, Jordan","Beirut, Lebanon","Damascus, Syria",
+  "Baghdad, Iraq","Tehran, Iran","Ankara, Turkey","Istanbul, Turkey","Izmir, Turkey","Tashkent, Uzbekistan","Almaty, Kazakhstan",
+  "Baku, Azerbaijan","Tbilisi, Georgia","Yerevan, Armenia","Kabul, Afghanistan",
+  "Sydney, Australia","Melbourne, Australia","Brisbane, Australia","Perth, Australia","Adelaide, Australia","Gold Coast, Australia","Canberra, Australia",
+  "Auckland, New Zealand","Wellington, New Zealand","Christchurch, New Zealand","Suva, Fiji","Port Moresby, Papua New Guinea","Honiara, Solomon Islands","Apia, Samoa","Nuku'alofa, Tonga"
+];
+
+const COUNTRIES = [
+  { name: "Kenya", code: "+254" }, { name: "Uganda", code: "+256" }, { name: "Tanzania", code: "+255" },
+  { name: "Rwanda", code: "+250" }, { name: "Burundi", code: "+257" }, { name: "South Sudan", code: "+211" },
+  { name: "Ethiopia", code: "+251" }, { name: "Somalia", code: "+252" }, { name: "Nigeria", code: "+234" },
+  { name: "Ghana", code: "+233" }, { name: "South Africa", code: "+27" }, { name: "Egypt", code: "+20" },
+  { name: "United Kingdom", code: "+44" }, { name: "United States", code: "+1" }, { name: "Canada", code: "+1" },
+  { name: "India", code: "+91" }, { name: "China", code: "+86" }, { name: "United Arab Emirates", code: "+971" },
+  { name: "Germany", code: "+49" }, { name: "France", code: "+33" }, { name: "Australia", code: "+61" },
+];
+
+const INST_COUNTRIES = [
+  "Kenya","Uganda","Tanzania","Rwanda","Burundi","South Sudan","Ethiopia","Somalia",
+  "Nigeria","Ghana","South Africa","Egypt","Morocco","Zambia","Zimbabwe","Botswana",
+  "Namibia","Malawi","Mozambique","Cameroon","Senegal","Tunisia","Algeria",
+  "United Kingdom","United States","Canada","Australia","New Zealand","Ireland",
+  "Germany","France","Netherlands","Belgium","Spain","Italy","Sweden","Norway",
+  "Denmark","Finland","Switzerland","Austria","Poland","Portugal","Greece",
+  "Czech Republic","Hungary","Romania","Russia","Turkey","Ukraine",
+  "India","China","Japan","South Korea","Malaysia","Singapore","Indonesia",
+  "Philippines","Thailand","Vietnam","Pakistan","Bangladesh","Sri Lanka","Nepal",
+  "United Arab Emirates","Saudi Arabia","Qatar","Kuwait","Bahrain","Oman",
+  "Jordan","Lebanon","Israel","Brazil","Argentina","Mexico","Chile","Colombia",
+  "Peru","Ecuador","Jamaica","Trinidad and Tobago","Other",
+];
+
+const SEED_UNIVERSITIES = [
+  "University of Nairobi","Moi University","Kenyatta University","Egerton University",
+  "Jomo Kenyatta University of Agriculture and Technology","Maseno University",
+  "Masinde Muliro University of Science and Technology","Dedan Kimathi University of Technology",
+  "Chuka University","Technical University of Kenya","Technical University of Mombasa",
+  "Pwani University","Kisii University","University of Eldoret","Maasai Mara University",
+  "Jaramogi Oginga Odinga University of Science and Technology","Laikipia University",
+  "South Eastern Kenya University","Meru University of Science and Technology",
+  "Multimedia University of Kenya","University of Kabianga","Karatina University",
+  "Kibabii University","Rongo University","The Co-operative University of Kenya",
+  "Taita Taveta University","Murang'a University of Technology","University of Embu",
+  "Machakos University","Kirinyaga University","Garissa University","Alupe University",
+  "Kaimosi Friends University","Tom Mboya University","Tharaka University","Bomet University",
+  "Strathmore University","United States International University-Africa",
+  "Catholic University of Eastern Africa","Daystar University","Africa Nazarene University",
+  "Kenya Methodist University","St. Paul's University","Pan Africa Christian University",
+  "Kabarak University","Mount Kenya University","Africa International University",
+  "Kenya Highlands Evangelical University","Great Lakes University of Kisumu",
+  "KCA University","Adventist University of Africa","KAG East University","Umma University",
+  "Presbyterian University of East Africa","Aga Khan University",
+  "Kiriri Women's University of Science and Technology","The East African University",
+  "Zetech University","Riara University","Tangaza University",
+  "Marist International University College","Hekima University College",
+  "Scott Christian University","University of Eastern Africa, Baraton","Kenya Medical Training College"
+];
+
+const PHONE_PATTERNS = [
+  /(?:\+?\d{1,3}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}/g,
+  /\b0\d{9,10}\b/g,
+  /\b\d{3}[\s-]?\d{3}[\s-]?\d{3,4}\b/g,
+  /(?:\b\d{10,13}\b)/g,
+];
+const SOCIAL_PATTERNS = [
+  /(?:instagram|insta|ig)\s*[:@\-]?\s*[\w.@]{2,}/gi,
+  /(?:whatsapp|whats app|wa)\s*[:@\-]?\s*[\w.+\d]{4,}/gi,
+  /(?:facebook|fb|messenger)\s*[:@\-]?\s*[\w.\/]{2,}/gi,
+  /(?:twitter|x\.com|tiktok|snapchat|snap|telegram)\s*[:@\-]?\s*[\w.@\/]{2,}/gi,
+  /(?:@[a-zA-Z0-9_.]{2,})/g,
+  /(?:https?:\/\/|www\.)[^\s]+/gi,
+  /(?:t\.me|wa\.me|m\.me)\/[^\s]+/gi,
+];
+const ABUSIVE_WORDS = [
+  "fuck","fck","fuk","shit","bitch","bastard","asshole","dick","pussy","cunt",
+  "slut","whore","hoe","nigga","nigger","faggot","fag","retard","idiot","stupid",
+  "dumb","moron","ugly","fatso","kill yourself","kys","die","rape","sex",
+  "porn","nude","nudes","dick pic","send nudes","horny","sexy","sugar daddy",
+  "sugar mummy","sponsor","mchele","malaya","chokosh","kuma","fala","mbwa",
+  "punda","shenzi","mjinga","mavi","takataka","useless","worthless","hate you",
+];
+function moderateText(text) {
+  if (!text || typeof text !== "string") return { blocked: false };
+  const lower = text.toLowerCase();
+  for (const re of PHONE_PATTERNS) { if (re.test(text)) { re.lastIndex = 0; return { blocked: true, reason: "Phone numbers cannot be shared in chat." }; } re.lastIndex = 0; }
+  for (const re of SOCIAL_PATTERNS) { if (re.test(text)) { re.lastIndex = 0; return { blocked: true, reason: "Social media handles and links are not allowed in chat." }; } re.lastIndex = 0; }
+  for (const word of ABUSIVE_WORDS) { if (lower.includes(word)) return { blocked: true, reason: "Abusive language is not allowed. Please be respectful." }; }
+  if (/\b[\w.+-]+@[\w-]+\.[\w.-]+\b/i.test(text)) return { blocked: true, reason: "Email addresses cannot be shared in chat." };
+  return { blocked: false };
+}
+
+function normalize(n) { return (n || "").trim().toLowerCase(); }
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+}
+function dialCodeFor(countryName) { const c = COUNTRIES.find(x => x.name === countryName); return c ? c.code : "+254"; }
+
+function upsertInstitution(name, type, country) {
+  const trimmed = (name || "").trim(); if (!trimmed) return null;
+  const norm = normalize(trimmed);
+  let inst = DB.institutions.find(i => i.name_normalized === norm);
+  if (!inst) { inst = { id: DB._instId++, name: trimmed, name_normalized: norm, type: type || "Other", country: country || "Kenya", manual: true }; DB.institutions.push(inst); }
+  else if (country && !inst.country) inst.country = country;
+  return inst;
+}
+function searchInstitutions(q, limit = 10) {
+  const needle = normalize(q); if (!needle) return [];
+  return DB.institutions.filter(i => i.name_normalized.includes(needle))
+    .map(i => ({ ...i, _score: i.name_normalized.startsWith(needle) ? 0 : 1 }))
+    .sort((a, b) => a._score - b._score || a.name.localeCompare(b.name)).slice(0, limit);
+}
+function parseHobbies(raw) { if (!raw) return []; if (Array.isArray(raw)) return raw; return raw.split(",").map(h => h.trim()).filter(Boolean); }
+function saveProfile(payload) {
+  let institution = null;
+  if (payload.institution_name && payload.institution_name.trim()) {
+    institution = upsertInstitution(payload.institution_name, payload.institution_type || "Other", payload.institution_country || "Kenya");
+  }
+  let profile = DB.profiles.find(p => p.id === payload.id);
+  if (!profile) { profile = { id: DB._profId++ }; DB.profiles.push(profile); }
+  Object.assign(profile, {
+    name: payload.name || "Anonymous", age: payload.age || null, gender: payload.gender || null,
+    county: payload.county || null, town: payload.town || null,
+    relationship_preference: payload.relationship_preference || null,
+    hobbies: payload.hobbies || [], smoking: payload.smoking || null, drinking: payload.drinking || null,
+    institution_id: institution ? institution.id : null,
+    institution_name: institution ? institution.name : null,
+    institution_type: payload.institution_type || (institution ? institution.type : null),
+    institution_country: payload.institution_country || (institution ? institution.country : null),
+    campus_name: payload.campus_name || null,
+    institution_visibility: !!payload.institution_visibility,
+    verified: profile.verified || false, verified_until: profile.verified_until || null,
+    last_seen_at: new Date().toISOString(), photo: profile.photo || payload.photo || null,
+    photos: payload.photos || profile.photos || [],
+    profile_photo: payload.profile_photo || profile.profile_photo || null,
+    cover_photo: payload.cover_photo || profile.cover_photo || null,
+  });
+  return profile;
+}
+function isVerified(p) { return p.verified && p.verified_until && new Date(p.verified_until) > new Date(); }
+function isOnline(p) { if (!p.last_seen_at) return false; return Date.now() - new Date(p.last_seen_at).getTime() < 5 * 60 * 1000; }
+function discover(f) {
+  return DB.profiles.filter(p => {
+    if (f.age_min != null && (p.age == null || p.age < f.age_min)) return false;
+    if (f.age_max != null && (p.age == null || p.age > f.age_max)) return false;
+    if (f.gender && p.gender !== f.gender) return false;
+    if (f.county && p.county !== f.county) return false;
+    if (f.town && normalize(p.town) !== normalize(f.town)) return false;
+    if (f.campus && normalize(p.campus_name) !== normalize(f.campus)) return false;
+    if (f.relationship_preference && p.relationship_preference !== f.relationship_preference) return false;
+    if (f.online_only && !isOnline(p)) return false;
+    if (f.verified_only && !isVerified(p)) return false;
+    if (f.institution_ids && f.institution_ids.length) { if (p.institution_id == null || !f.institution_ids.includes(p.institution_id)) return false; }
+    if (f.institution_types && f.institution_types.length) { if (!p.institution_type || !f.institution_types.includes(p.institution_type)) return false; }
+    if (f.no_institution && p.institution_id != null) return false;
+    return true;
+  });
+}
+
+function isUsernameTaken(username) { return DB.users.some(u => normalize(u.username) === normalize(username)); }
+function isEmailTaken(email) { return DB.users.some(u => normalize(u.email) === normalize(email)); }
+function generateCode() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+let activeEmailCodes = {};
+
+function authSignup({ username, name, email, country, phone, password }) {
+  const normEmail = normalize(email);
+  if (DB.users.some(u => normalize(u.email) === normEmail)) return { error: "An account with this email already exists." };
+  if (isUsernameTaken(username)) return { error: "That username is already taken. Try another." };
+  const dial = dialCodeFor(country);
+  const fullPhone = dial + " " + phone.trim();
+  if (DB.users.some(u => u.phone === fullPhone)) return { error: "An account with this phone number already exists." };
+  const user = { id: DB._userId++, username: username.trim(), email: email.trim(), country, dialCode: dial, phoneNumber: phone.trim(), phone: fullPhone, password, name: name.trim(), profileId: null };
+  DB.users.push(user);
+  return { user };
+}
+function authLogin(identifier, password) {
+  const norm = normalize(identifier);
+  const user = DB.users.find(u => (normalize(u.username) === norm || normalize(u.email) === norm || normalize(u.phone) === norm || normalize(u.phoneNumber) === norm) && u.password === password);
+  if (!user) return { error: "Invalid credentials. Check your username/email/phone and password." };
+  return { user };
+}
+function authLogout() {
+  DB.currentUser = null; DB.verification = { active: false, expiresAt: null };
+  activeChatPartnerId = null; showView("auth"); showWelcome();
+}
+function getMyProfile() {
+  if (!DB.currentUser || !DB.currentUser.profileId) return null;
+  return DB.profiles.find(p => p.id === DB.currentUser.profileId);
+}
+
+/* =================================================================
+   PHOTO GALLERY SYSTEM
+   ================================================================= */
+const MAX_PHOTOS = 5;
+const MIN_PHOTOS = 2;
+
+/* --- Photo state per form (onboarding / edit profile) --- */
+const photoState = {
+  ob: { photos: [], profileIndex: 0, coverIndex: 0 },
+  reg: { photos: [], profileIndex: 0, coverIndex: 0 },
+};
+
+function photoSlotHTML(state, index, prefix) {
+  const src = state.photos[index];
+  let badge = '';
+  if (index === state.profileIndex) badge = '<div class="photo-badge">PROFILE</div>';
+  if (index === state.coverIndex) badge = '<div class="photo-badge" style="background:rgba(59,130,246,0.9);">COVER</div>';
+  return `
+    <div class="photo-slot ${index === state.profileIndex ? 'photo-profile' : ''} ${index === state.coverIndex ? 'photo-cover' : ''}" data-index="${index}" data-prefix="${prefix}">
+      <img src="${src}" alt="Photo ${index + 1}" />
+      ${badge}
+      <button type="button" class="photo-remove" data-prefix="${prefix}" data-index="${index}">✕</button>
+    </div>`;
+}
+
+function renderPhotoGallery(prefix) {
+  const state = photoState[prefix];
+  const gallery = document.getElementById(prefix + '-photo-gallery');
+  const actions = document.getElementById(prefix + '-photo-actions');
+  const msg = document.getElementById(prefix + '-photo-msg');
+  if (!gallery) return;
+
+  gallery.innerHTML = '';
+  state.photos.forEach((src, i) => {
+    gallery.insertAdjacentHTML('beforeend', photoSlotHTML(state, i, prefix));
+  });
+
+  // Add slot if under max
+  if (state.photos.length < MAX_PHOTOS) {
+    gallery.insertAdjacentHTML('beforeend', `
+      <div class="photo-slot" data-add="${prefix}" style="border-style:dashed;">
+        <span class="photo-placeholder">＋</span>
+      </div>`);
+  }
+
+  // Actions
+  actions.innerHTML = '';
+  if (state.photos.length > 0) {
+    state.photos.forEach((src, i) => {
+      if (i !== state.profileIndex) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-ghost';
+        btn.textContent = `Set ${i + 1} as Profile`;
+        btn.style.fontSize = '10px';
+        btn.onclick = () => { state.profileIndex = i; renderPhotoGallery(prefix); };
+        actions.appendChild(btn);
+      }
+      if (i !== state.coverIndex) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-ghost';
+        btn.textContent = `Set ${i + 1} as Cover`;
+        btn.style.fontSize = '10px';
+        btn.style.borderColor = '#93c5fd';
+        btn.style.color = '#1e40af';
+        btn.onclick = () => { state.coverIndex = i; renderPhotoGallery(prefix); };
+        actions.appendChild(btn);
+      }
+    });
+  }
+
+  // Validation message
+  if (state.photos.length < MIN_PHOTOS) {
+    msg.innerHTML = `<span style="color:#dc2626;">⚠ You need at least ${MIN_PHOTOS} photos (${state.photos.length}/${MIN_PHOTOS}).</span>`;
+  } else if (state.photos.length >= MAX_PHOTOS) {
+    msg.innerHTML = `<span style="color:#059669;">✅ Maximum ${MAX_PHOTOS} photos reached.</span>`;
+  } else {
+    msg.innerHTML = `<span style="color:#059669;">✅ ${state.photos.length} photo(s) added. You can add up to ${MAX_PHOTOS}.</span>`;
+  }
+
+  // Cover preview
+  const coverSlot = document.getElementById(prefix + '-cover-preview-slot');
+  if (coverSlot) {
+    if (state.photos.length > 0 && state.photos[state.coverIndex]) {
+      coverSlot.classList.remove('section-hidden');
+      coverSlot.innerHTML = `<img src="${state.photos[state.coverIndex]}" alt="Cover" style="width:100%;height:100%;object-fit:cover;" /><div class="photo-badge" style="background:rgba(59,130,246,0.9);">COVER</div>`;
+    } else {
+      coverSlot.classList.add('section-hidden');
+    }
+  }
+}
+
+function addPhotoFromFile(prefix, file) {
+  const state = photoState[prefix];
+  if (state.photos.length >= MAX_PHOTOS) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    state.photos.push(e.target.result);
+    renderPhotoGallery(prefix);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handlePhotoClick(prefix) {
+  // Event delegation on gallery
+  const gallery = document.getElementById(prefix + '-photo-gallery');
+  if (!gallery) return;
+  gallery.addEventListener('click', (e) => {
+    const addSlot = e.target.closest('[data-add]');
+    if (addSlot) {
+      document.getElementById(prefix + '-photo-input').click();
+      return;
+    }
+    const removeBtn = e.target.closest('.photo-remove');
+    if (removeBtn) {
+      const idx = parseInt(removeBtn.dataset.index);
+      const st = photoState[removeBtn.dataset.prefix];
+      st.photos.splice(idx, 1);
+      if (st.profileIndex >= st.photos.length) st.profileIndex = Math.max(0, st.photos.length - 1);
+      if (st.coverIndex >= st.photos.length) st.coverIndex = Math.max(0, st.photos.length - 1);
+      renderPhotoGallery(removeBtn.dataset.prefix);
+      return;
+    }
+  });
+}
+
+// File input change handlers
+['ob', 'reg'].forEach(prefix => {
+  const input = document.getElementById(prefix + '-photo-input');
+  if (input) {
+    input.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) addPhotoFromFile(prefix, file);
+      e.target.value = '';
+    });
+  }
+  handlePhotoClick(prefix);
+});
+
+/* =================================================================
+   PASSWORD VISIBILITY TOGGLES
+   ================================================================= */
+function initPasswordToggles() {
+  // Individual toggle buttons
+  document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    });
+  });
+
+  // Signup: show all passwords
+  const toggleSignup = document.getElementById('toggle-all-signup-passwords');
+  if (toggleSignup) {
+    toggleSignup.addEventListener('change', () => {
+      const show = toggleSignup.checked;
+      ['su-password', 'su-password2'].forEach(id => {
+        const inp = document.getElementById(id);
+        if (inp) inp.type = show ? 'text' : 'password';
+      });
+      document.querySelectorAll('.password-toggle-btn[data-target="su-password"], .password-toggle-btn[data-target="su-password2"]').forEach(b => {
+        b.textContent = show ? '🙈' : '👁️';
+      });
+    });
+  }
+
+  // Login: show password
+  const toggleLogin = document.getElementById('toggle-login-password');
+  if (toggleLogin) {
+    toggleLogin.addEventListener('change', () => {
+      const inp = document.getElementById('li-password');
+      if (inp) inp.type = toggleLogin.checked ? 'text' : 'password';
+      const btn = document.querySelector('.password-toggle-btn[data-target="li-password"]');
+      if (btn) btn.textContent = toggleLogin.checked ? '🙈' : '👁️';
+    });
+  }
+
+  // Reset: show both passwords
+  const toggleReset = document.getElementById('toggle-all-reset-passwords');
+  if (toggleReset) {
+    toggleReset.addEventListener('change', () => {
+      const show = toggleReset.checked;
+      ['fp-newpass', 'fp-newpass2'].forEach(id => {
+        const inp = document.getElementById(id);
+        if (inp) inp.type = show ? 'text' : 'password';
+      });
+      document.querySelectorAll('.password-toggle-btn[data-target="fp-newpass"], .password-toggle-btn[data-target="fp-newpass2"]').forEach(b => {
+        b.textContent = show ? '🙈' : '👁️';
+      });
+    });
+  }
+}
+
+/* =================================================================
+   REMAINING APP LOGIC (trimmed to essentials for this update)
+   ================================================================= */
+let activeChatPartnerId = null;
+
+function showView(view) {
+  ['auth','onboarding','verify','home','register','discover','chat'].forEach(v => {
+    const el = document.getElementById('view-' + v);
+    if (el) el.classList.add('section-hidden');
+  });
+  const target = document.getElementById('view-' + view);
+  if (target) target.classList.remove('section-hidden');
+
+  if (view === 'onboarding') {
+    renderPhotoGallery('ob');
+  }
+  if (view === 'register') {
+    renderPhotoGallery('reg');
+  }
+}
+
+/* Seed demo users so Discover has content */
+function seedDemo() {
+  const demoProfiles = [
+    { name:"Alice Wanjiru", age:23, gender:"female", county:"Nairobi City, Kenya", town:"Westlands", rel:"dating", inst:"Jomo Kenyatta University of Agriculture and Technology", type:"University", campus:"Main Campus", hobbies:"Hiking, Photography, Reading, Coffee", visible:true, online:true, smoking:"never", drinking:"socially", verified:true },
+    { name:"Brian Otieno", age:25, gender:"male", county:"Nairobi City, Kenya", town:"Karen", rel:"long-term", inst:"University of Nairobi", type:"University", campus:"Main Campus", hobbies:"Football, Music, Travel", visible:true, online:true, smoking:"never", drinking:"socially", verified:false },
+    { name:"Cynthia Mwangi", age:22, gender:"female", county:"Nakuru, Kenya", town:"Milimani", rel:"friendship", inst:"Egerton University", type:"University", campus:"Njoro Campus", hobbies:"Reading, Cooking, Movies", visible:true, online:false, smoking:"never", drinking:"never", verified:true },
+    { name:"David Kiprop", age:24, gender:"male", county:"Eldoret, Kenya", town:"Kapsoya", rel:"dating", inst:"Moi University", type:"University", campus:"Main Campus", hobbies:"Running, Gaming, Music", visible:true, online:true, smoking:"occasionally", drinking:"socially", verified:false },
+    { name:"Esther Akinyi", age:21, gender:"female", county:"Kisumu, Kenya", town:"Milimani", rel:"long-term", inst:"Maseno University", type:"University", campus:"Main Campus", hobbies:"Dancing, Poetry, Travel", visible:true, online:false, smoking:"never", drinking:"never", verified:true },
+    { name:"Felix Mutua", age:26, gender:"male", county:"Machakos, Kenya", town:"Mlolongo", rel:"marriage", inst:"Machakos University", type:"University", campus:"Main Campus", hobbies:"Farming, Business, Football", visible:true, online:true, smoking:"never", drinking:"occasionally", verified:false },
+    { name:"Grace Njeri", age:23, gender:"female", county:"Nyeri, Kenya", town:"Nyeri Town", rel:"dating", inst:"Karatina University", type:"University", campus:"Main Campus", hobbies:"Hiking, Photography, Cooking", visible:true, online:false, smoking:"never", drinking:"socially", verified:true },
+    { name:"Henry Ochieng", age:24, gender:"male", county:"Mombasa, Kenya", town:"Nyali", rel:"friendship", inst:"Technical University of Mombasa", type:"University", campus:"Main Campus", hobbies:"Swimming, Music, Travel", visible:true, online:true, smoking:"never", drinking:"never", verified:false },
+  ];
+  demoProfiles.forEach(d => {
+    const inst = upsertInstitution(d.inst, d.type, 'Kenya');
+    const prof = {
+      id: DB._profId++,
+      name: d.name,
+      age: d.age,
+      gender: d.gender,
+      county: d.county,
+      town: d.town,
+      relationship_preference: d.rel,
+      hobbies: parseHobbies(d.hobbies),
+      smoking: d.smoking,
+      drinking: d.drinking,
+      institution_id: inst ? inst.id : null,
+      institution_name: inst ? inst.name : d.inst,
+      institution_type: d.type,
+      institution_country: 'Kenya',
+      campus_name: d.campus,
+      institution_visibility: d.visible,
+      verified: d.verified,
+      verified_until: d.verified ? new Date(Date.now() + 30*24*60*60*1000).toISOString() : null,
+      last_seen_at: d.online ? new Date().toISOString() : new Date(Date.now() - 60*60*1000).toISOString(),
+      photos: [],
+      profile_photo: null,
+      cover_photo: null,
+    };
+    DB.profiles.push(prof);
+  });
+}
+
+seedDemo();
+
+// ---- Init all forms & toggles ----
+document.addEventListener('DOMContentLoaded', () => {
+  initPasswordToggles();
+
+  // Populate countries selects
+  ['su-country','reg-country'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    COUNTRIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = `${c.name} (${c.code})`;
+      sel.appendChild(opt);
+    });
+  });
+  ['ob-inst-country','inst-country'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    INST_COUNTRIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  });
+  ['ob-county','reg-county','f-county'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    if (id === 'f-county') {
+      const any = document.createElement('option');
+      any.value = '';
+      any.textContent = 'Any';
+      sel.appendChild(any);
+    }
+    REGIONS.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r;
+      opt.textContent = r;
+      sel.appendChild(opt);
+    });
+  });
+
+  // Init photo galleries
+  renderPhotoGallery('ob');
+  renderPhotoGallery('reg');
+
+  // Seed institutions into DB for autocomplete
+  SEED_UNIVERSITIES.forEach(u => upsertInstitution(u, 'University', 'Kenya'));
+});
+
+// Expose needed functions globally (for inline onclick if any)
+window.showView = showView;
+</script>
+</body>
+</html>
