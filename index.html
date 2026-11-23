@@ -44,9 +44,9 @@
   .collage-caption strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 2px; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
   .collage-caption span { font-size: 11.5px; color: rgba(255,255,255,0.82); line-height: 1.4; text-shadow: 0 1px 6px rgba(0,0,0,0.5); }
   .collage-heart { position: absolute; top: 12px; right: 12px; z-index: 2; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.22); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; font-size: 15px; border: 1px solid rgba(255,255,255,0.35); }
-  .welcome-stats { display: flex; gap: 44px; flex-wrap: wrap; padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.18); }
-  .welcome-stats div strong { display: block; font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.6px; text-shadow: 0 2px 14px rgba(0,0,0,0.4); }
-  .welcome-stats div span { font-size: 12px; color: rgba(255,255,255,0.75); letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; }
+  
+  /* STATS REMOVED */
+  .welcome-stats { display: none; }
 
   /* APP SHELL */
   header { background: linear-gradient(135deg, #831843 0%, #be185d 50%, #ec4899 100%); color: white; padding: 12px 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 20px rgba(190, 24, 93, 0.3); position: sticky; top: 0; z-index: 50; flex-wrap: wrap; }
@@ -389,7 +389,8 @@
     </div>
     <div class="welcome-collage-label">Real couples, real connections</div>
     <div class="welcome-collage" id="welcome-collage"></div>
-    <div class="welcome-stats">
+    <!-- STATS HIDDEN HERE -->
+    <div class="welcome-stats" style="display:none;">
       <div><strong>12,400+</strong><span>Members</span></div>
       <div><strong>230+</strong><span>Institutions</span></div>
       <div><strong>47</strong><span>Counties</span></div>
@@ -666,12 +667,6 @@
         <div class="hero-cta-row">
           <button class="cta" id="hero-cta">Edit Your Profile</button>
           <button class="cta-ghost" id="hero-cta2">Discover Members</button>
-        </div>
-        <div class="hero-stats">
-          <div><strong id="stat-users">0</strong><span>MEMBERS</span></div>
-          <div><strong id="stat-inst">0</strong><span>INSTITUTIONS</span></div>
-          <div><strong id="stat-counties">47</strong><span>COUNTIES</span></div>
-          <div><strong id="stat-verified">0</strong><span>VERIFIED</span></div>
         </div>
       </div>
     </div>
@@ -1184,7 +1179,7 @@ function getMyProfile() {
 }
 
 /* =================================================================
-   PHOTO UPLOAD & GALLERY LOGIC (FIXED WITH API CALL)
+   PHOTO UPLOAD & GALLERY LOGIC
    ================================================================= */
 let currentPhotoTarget = { mode: "ob", index: 0 };
 
@@ -1254,11 +1249,11 @@ document.addEventListener("change", (e) => {
     const msg = document.getElementById(currentPhotoTarget.mode + "-photo-msg");
     if (msg) {
       msg.style.color = "#3b82f6";
-      msg.textContent = "Uploading photo to server...";
+      msg.textContent = "Uploading photo...";
     }
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       const base64Image = event.target.result;
       const { mode, index } = currentPhotoTarget;
       
@@ -1273,47 +1268,24 @@ document.addEventListener("change", (e) => {
 
       if (!profile.photos) profile.photos = [];
 
-      try {
-        // 🔥 SEND TO BACKEND API
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            image: base64Image,
-            userId: profile.id
-          })
-        });
+      // Immediately set the image
+      profile.photos[index] = base64Image;
+      
+      if (index === 0) profile.profile_photo = base64Image;
+      if (index === 1) profile.cover_photo = base64Image;
 
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || "Upload failed");
-        }
-
-        // Save the returned image URL to the profile
-        profile.photos[index] = data.imageUrl;
-        
-        if (index === 0) profile.profile_photo = data.imageUrl;
-        if (index === 1) profile.cover_photo = data.imageUrl;
-
-        saveToLocalStorage();
-        renderPhotoGallery(mode);
-        
-        if (msg) {
-          msg.style.color = "#22c55e";
-          msg.textContent = "Photo uploaded successfully!";
-        }
-
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        if (msg) {
-          msg.style.color = "#dc2626";
-          msg.textContent = error.message || "Failed to upload photo. Please try again.";
-        }
-        alert(error.message || "Failed to upload photo to server.");
-      } finally {
-        e.target.value = "";
+      // Save to local storage
+      saveToLocalStorage();
+      
+      // Re-render the gallery to show the new image
+      renderPhotoGallery(mode);
+      
+      if (msg) {
+        msg.style.color = "#22c55e";
+        msg.textContent = "Photo uploaded successfully!";
       }
+
+      e.target.value = "";
     };
     reader.readAsDataURL(file);
   }
@@ -1340,7 +1312,7 @@ function saveToLocalStorage() {
       conversations: DB.conversations
     }));
   } catch (e) {
-    console.warn("Could not save to localStorage (might be full or disabled).", e);
+    console.warn("Could not save to localStorage.", e);
   }
 }
 
@@ -1586,13 +1558,14 @@ document.getElementById("ck-pay-btn").addEventListener("click", async () => {
   const payBtn = document.getElementById("ck-pay-btn");
   payBtn.disabled = true;
   payBtn.innerHTML = '<span class="spinner"></span> Processing...';
+  
+  const alertBox = document.getElementById("ck-alert");
+  alertBox.style.display = "none";
 
   try {
     const res = await fetch("/api/paystack/initialize", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: email,
         amount: amount,
@@ -1600,18 +1573,23 @@ document.getElementById("ck-pay-btn").addEventListener("click", async () => {
       })
     });
 
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Server error. Please make sure your Vercel backend is deployed correctly.");
+    }
+
     const data = await res.json();
 
-    if (data.error) {
-      throw new Error(data.error);
+    if (!res.ok || data.error) {
+      throw new Error(data.error || "Failed to initialize payment");
     }
 
     window.location.href = data.authorization_url;
 
   } catch (error) {
     console.error("Payment initialization failed:", error);
-    document.getElementById("ck-alert").style.display = "block";
-    document.getElementById("ck-alert").innerText = error.message || "Failed to initialize payment. Please try again.";
+    alertBox.style.display = "block";
+    alertBox.innerText = error.message || "Failed to connect to the server.";
     
     payBtn.disabled = false;
     payBtn.innerText = "Pay Securely";
