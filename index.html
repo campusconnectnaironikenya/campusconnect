@@ -1891,7 +1891,7 @@ document.getElementById("ck-pay-btn").addEventListener("click", async () => {
   const btnText = document.getElementById("ck-pay-btn-text");
   btn.disabled = true; btnText.innerHTML = '<span class="spinner"></span>Initializing…'; ckHideAlert();
   try {
-    const res = await fetch("/api/paystack/initialize", {
+    const res = await fetch("https://https://campusconnect.onrender.com.onrender.com/api/paystack/initialize", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, plan: plan.key, amount: plan.priceKes * 100, currency: "KES", callback_url: window.location.origin + "/checkout/callback" })
     });
