@@ -1184,6 +1184,142 @@ function getMyProfile() {
 }
 
 /* =================================================================
+   PHOTO UPLOAD & GALLERY LOGIC (FIXED)
+   ================================================================= */
+let currentPhotoTarget = { mode: "ob", index: 0 };
+
+function renderPhotoGallery(mode) {
+  const profile = mode === "reg" ? getMyProfile() : null;
+  const photos = (profile && profile.photos) ? profile.photos : [];
+  const gallery = document.getElementById(mode + "-photo-gallery");
+  const actions = document.getElementById(mode + "-photo-actions");
+  
+  if (!gallery) return;
+  gallery.innerHTML = "";
+  actions.innerHTML = "";
+
+  photos.forEach((photo, index) => {
+    const slot = document.createElement("div");
+    slot.className = "photo-slot";
+    if (index === 0) slot.classList.add("photo-profile");
+    if (index === 1) slot.classList.add("photo-cover");
+    
+    slot.innerHTML = `
+      <img src="${photo}" alt="Photo ${index + 1}" />
+      ${index === 0 ? '<span class="photo-badge">Profile</span>' : ''}
+      ${index === 1 ? '<span class="photo-badge">Cover</span>' : ''}
+      <button class="photo-remove" onclick="removePhoto('${mode}', ${index})">✕</button>
+    `;
+    gallery.appendChild(slot);
+  });
+
+  for (let i = photos.length; i < 5; i++) {
+    const slot = document.createElement("div");
+    slot.className = "photo-slot";
+    slot.innerHTML = `<span class="photo-placeholder">+</span>`;
+    slot.onclick = () => {
+      currentPhotoTarget = { mode: mode, index: i };
+      document.getElementById(mode + "-photo-input").click();
+    };
+    gallery.appendChild(slot);
+  }
+
+  const msg = document.getElementById(mode + "-photo-msg");
+  if (msg) {
+    if (photos.length < 2) {
+      msg.style.color = "#dc2626";
+      msg.textContent = `You need at least 2 photos. Currently: ${photos.length}/5`;
+    } else {
+      msg.style.color = "#22c55e";
+      msg.textContent = `Looking good! ${photos.length}/5 photos uploaded.`;
+    }
+  }
+}
+
+document.addEventListener("change", (e) => {
+  if (e.target.classList.contains("photo-input-hidden")) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file (JPG, PNG, etc).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image is too large. Max size is 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Image = event.target.result;
+      const { mode, index } = currentPhotoTarget;
+      
+      let profile = getMyProfile();
+      if (!profile && DB.currentUser) {
+        profile = saveProfile({ name: DB.currentUser.name });
+        DB.currentUser.profileId = profile.id;
+      }
+
+      if (!profile) return;
+
+      if (!profile.photos) profile.photos = [];
+
+      profile.photos[index] = base64Image;
+      
+      if (index === 0) profile.profile_photo = base64Image;
+      if (index === 1) profile.cover_photo = base64Image;
+
+      saveToLocalStorage();
+      renderPhotoGallery(mode);
+      e.target.value = "";
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+function removePhoto(mode, index) {
+  let profile = getMyProfile();
+  if (!profile || !profile.photos) return;
+  
+  profile.photos.splice(index, 1);
+  if (profile.photos.length > 0) profile.profile_photo = profile.photos[0];
+  else profile.profile_photo = null;
+
+  saveToLocalStorage();
+  renderPhotoGallery(mode);
+}
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem("campusconnect_db", JSON.stringify({
+      profiles: DB.profiles,
+      users: DB.users,
+      institutions: DB.institutions,
+      conversations: DB.conversations
+    }));
+  } catch (e) {
+    console.warn("Could not save to localStorage (might be full or disabled).", e);
+  }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const saved = localStorage.getItem("campusconnect_db");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      DB.profiles = parsed.profiles || DB.profiles;
+      DB.users = parsed.users || DB.users;
+      DB.institutions = parsed.institutions || DB.institutions;
+      DB.conversations = parsed.conversations || DB.conversations;
+    }
+  } catch (e) {
+    console.warn("Could not load from localStorage.", e);
+  }
+}
+
+/* =================================================================
    SEED
    ================================================================= */
 const REAL_PEOPLE = [
@@ -1362,13 +1498,11 @@ function openCheckout(plan) {
     list.appendChild(div);
   });
 
-  // Set initial state
   const initialPlan = plans.find(p => p.id === selectedCheckoutPlan) || plans[0];
   selectedCheckoutPlan = initialPlan.id;
   if (list.firstChild) list.firstChild.classList.add("selected");
   updateCheckoutSummary(initialPlan);
 
-  // Autofill email if logged in
   if (DB.currentUser && DB.currentUser.email) {
     document.getElementById("ck-email").value = DB.currentUser.email;
   }
@@ -1387,13 +1521,11 @@ function updateCheckoutSummary(plan) {
   document.getElementById("ck-sum-total").textContent = "KSh " + plan.price;
 }
 
-// Close checkout
 document.getElementById("ck-close").addEventListener("click", () => {
   document.getElementById("checkout-page").classList.remove("open");
   document.body.style.overflow = "";
 });
 
-// Handle Real Paystack Payment
 document.getElementById("ck-pay-btn").addEventListener("click", async () => {
   const email = document.getElementById("ck-email").value.trim();
   if (!email) {
@@ -1416,7 +1548,6 @@ document.getElementById("ck-pay-btn").addEventListener("click", async () => {
   payBtn.innerHTML = '<span class="spinner"></span> Processing...';
 
   try {
-    // Calls the Vercel Backend API
     const res = await fetch("/api/paystack/initialize", {
       method: "POST",
       headers: {
@@ -1435,7 +1566,6 @@ document.getElementById("ck-pay-btn").addEventListener("click", async () => {
       throw new Error(data.error);
     }
 
-    // Redirect the user to Paystack to pay
     window.location.href = data.authorization_url;
 
   } catch (error) {
@@ -1448,7 +1578,6 @@ document.getElementById("ck-pay-btn").addEventListener("click", async () => {
   }
 });
 
-// Connect UI buttons to Checkout
 document.getElementById("pay-paystack-btn").addEventListener("click", () => {
   if (selectedBatchPlan) openCheckout(selectedBatchPlan);
   else alert("Please select a plan first.");
@@ -1458,7 +1587,6 @@ document.getElementById("subscribe-verify-btn").addEventListener("click", () => 
   openCheckout("1month");
 });
 
-// Batch selection logic
 document.querySelectorAll(".batch-option").forEach(opt => {
   opt.addEventListener("click", () => {
     document.querySelectorAll(".batch-option").forEach(o => o.classList.remove("selected"));
@@ -1537,7 +1665,6 @@ document.getElementById("toggle-all-reset-passwords").addEventListener("change",
   document.querySelectorAll('[data-target^="fp-newpass"]').forEach(btn => btn.textContent = show ? "🙈" : "👁️");
 });
 
-// Simple signup logic
 document.getElementById("signup-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const res = authSignup({
@@ -1563,6 +1690,9 @@ document.getElementById("login-form").addEventListener("submit", (e) => {
 });
 
 document.getElementById("logout-btn")?.addEventListener("click", () => authLogout());
+
+// Load saved data
+loadFromLocalStorage();
 
 // Initialize the first view
 showView("auth");
