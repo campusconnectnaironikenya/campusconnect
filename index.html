@@ -1288,883 +1288,284 @@ function renderCollage() {
   COLLAGE.forEach(item => {
     const card = document.createElement('div');
     card.className = 'collage-card';
-    card.innerHTML = `<img src="${item.img}" alt="${escapeHtml(item.couple)}" loading="lazy" /><div class="collage-heart">❤</div><div class="collage-caption"><strong>${escapeHtml(item.couple)}</strong><span>${escapeHtml(item.caption)}</span></div>`;
+    card.innerHTML = `<img src="${item.img}" alt="${escapeHtml(item.couple)}" loading="lazy" /><div class="collage-heart">💖</div><div class="collage-caption"><strong>${escapeHtml(item.couple)}</strong><span>${escapeHtml(item.caption)}</span></div>`;
     wrap.appendChild(card);
   });
 }
 renderCollage();
 
-const welcomePage = document.getElementById('welcome-page');
-function hideWelcome() { welcomePage.classList.add('hidden'); document.body.style.overflow = ''; }
-function showWelcome() { welcomePage.classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-
-document.getElementById('welcome-signup-btn').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-signup').click(); });
-document.getElementById('welcome-login-btn').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-login').click(); });
-document.getElementById('welcome-cta-signup').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-signup').click(); });
-document.getElementById('welcome-cta-login').addEventListener('click', () => { hideWelcome(); showView('auth'); document.getElementById('auth-tab-login').click(); });
-document.getElementById('back-to-welcome-signup').addEventListener('click', showWelcome);
-document.getElementById('back-to-welcome-login').addEventListener('click', showWelcome);
-document.getElementById('back-to-welcome-forgot').addEventListener('click', showWelcome);
-
 /* =================================================================
-   AUTH WIRING
+   INIT
    ================================================================= */
-const tabSignup = document.getElementById("auth-tab-signup");
-const tabLogin = document.getElementById("auth-tab-login");
-const tabForgot = document.getElementById("auth-tab-forgot");
-const formSignup = document.getElementById("signup-form");
-const formLogin = document.getElementById("login-form");
-const formForgot = document.getElementById("forgot-form");
-
-function switchAuthTab(which) {
-  [tabSignup, tabLogin, tabForgot].forEach(t => t.classList.remove("active"));
-  [formSignup, formLogin, formForgot].forEach(f => f.classList.add("section-hidden"));
-  document.getElementById("auth-msg").innerHTML = "";
-  if (which === "signup") {
-    tabSignup.classList.add("active"); formSignup.classList.remove("section-hidden");
-    document.getElementById("auth-title").textContent = "Create Your Account";
-    document.getElementById("auth-sub").textContent = "Join CampusConnect today";
-    document.getElementById("su-verify-code-wrapper").classList.add("section-hidden");
-    document.getElementById("su-submit-btn").textContent = "Create Account →";
-    DB.pendingSignup = null;
-  } else if (which === "login") {
-    tabLogin.classList.add("active"); formLogin.classList.remove("section-hidden");
-    document.getElementById("auth-title").textContent = "Welcome Back";
-    document.getElementById("auth-sub").textContent = "Log in to continue connecting";
-  } else if (which === "forgot") {
-    tabForgot.classList.add("active"); formForgot.classList.remove("section-hidden");
-    document.getElementById("auth-title").textContent = "Reset Password";
-    document.getElementById("auth-sub").textContent = "Get back into your account";
-    document.getElementById("fp-step1").classList.remove("section-hidden");
-    document.getElementById("fp-step2").classList.add("section-hidden");
-    DB.pendingReset = null;
-    document.getElementById("fp-code").value = "";
-  }
-}
-tabSignup.addEventListener("click", () => switchAuthTab("signup"));
-tabLogin.addEventListener("click", () => switchAuthTab("login"));
-tabForgot.addEventListener("click", () => switchAuthTab("forgot"));
-document.getElementById("go-forgot-link").addEventListener("click", () => switchAuthTab("forgot"));
-document.getElementById("back-to-login").addEventListener("click", () => switchAuthTab("login"));
-
-/* Country selects */
-function populateCountrySelect(sel, defaultCountry) {
-  sel.innerHTML = "";
-  COUNTRIES.forEach(c => { const o = document.createElement("option"); o.value = c.name; o.textContent = c.name + " (" + c.code + ")"; if (c.name === defaultCountry) o.selected = true; sel.appendChild(o); });
-}
-populateCountrySelect(document.getElementById("su-country"), "Kenya");
-populateCountrySelect(document.getElementById("reg-country"), "Kenya");
-function populateInstCountries(sel) {
-  sel.innerHTML = "";
-  INST_COUNTRIES.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; if (c === "Kenya") o.selected = true; sel.appendChild(o); });
-}
-populateInstCountries(document.getElementById("ob-inst-country"));
-populateInstCountries(document.getElementById("inst-country"));
-document.getElementById("su-country").addEventListener("change", (e) => { document.getElementById("su-dialcode").innerHTML = `<option>${dialCodeFor(e.target.value)}</option>`; });
-document.getElementById("reg-country").addEventListener("change", (e) => { document.getElementById("reg-dialcode").innerHTML = `<option>${dialCodeFor(e.target.value)}</option>`; });
-document.getElementById("su-dialcode").innerHTML = `<option>${dialCodeFor("Kenya")}</option>`;
-document.getElementById("reg-dialcode").innerHTML = `<option>${dialCodeFor("Kenya")}</option>`;
-
-/* Username/email live validation */
-document.getElementById("su-username").addEventListener("input", (e) => {
-  const v = e.target.value.trim(); const err = document.getElementById("su-username-error");
-  if (!v) { err.textContent = ""; return; }
-  if (!/^[a-zA-Z0-9_]{3,20}$/.test(v)) { err.textContent = "3–20 chars, letters/numbers/underscore only."; return; }
-  if (isUsernameTaken(v)) err.textContent = "Username already taken."; else err.textContent = "";
-});
-document.getElementById("su-email").addEventListener("input", (e) => {
-  const v = e.target.value.trim(); const err = document.getElementById("su-email-error");
-  if (!v) { err.textContent = ""; return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { err.textContent = "Please enter a valid email address."; return; }
-  if (isEmailTaken(v)) err.textContent = "An account with this email already exists."; else err.textContent = "";
-});
-
-/* Signup */
-formSignup.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (DB.pendingSignup) {
-    const entered = document.getElementById("su-verify-code").value.trim();
-    if (entered !== DB.pendingSignup.code) return setAuthMsg("Invalid verification code. Please check your email and try again.", "error");
-    const { username, name, email, country, phone, password } = DB.pendingSignup;
-    const res = authSignup({ username, name, email, country, phone, password });
-    if (res.error) return setAuthMsg(res.error, "error");
-    DB.currentUser = res.user; signupDraft = { name }; DB.pendingSignup = null;
-    setAuthMsg("Account created! Let's set up your profile…", "success");
-    setTimeout(() => { document.getElementById("onboard-name").textContent = name; showView("onboarding"); }, 700);
-    return;
-  }
-  const username = document.getElementById("su-username").value.trim();
-  const name = document.getElementById("su-name").value.trim();
-  const email = document.getElementById("su-email").value.trim();
-  const country = document.getElementById("su-country").value;
-  const phone = document.getElementById("su-phone").value.trim();
-  const pw = document.getElementById("su-password").value;
-  const pw2 = document.getElementById("su-password2").value;
-  if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) return setAuthMsg("Username must be 3–20 chars.", "error");
-  if (isUsernameTaken(username)) return setAuthMsg("That username is already taken.", "error");
-  if (!name) return setAuthMsg("Please enter your display name.", "error");
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMsg("Please enter a valid email.", "error");
-  if (isEmailTaken(email)) return setAuthMsg("An account with this email already exists.", "error");
-  if (!country) return setAuthMsg("Please select your country.", "error");
-  if (!phone) return setAuthMsg("Please enter your phone number.", "error");
-  if (pw.length < 4) return setAuthMsg("Password must be at least 4 characters.", "error");
-  if (pw !== pw2) return setAuthMsg("Passwords don't match.", "error");
-  const code = generateCode();
-  activeEmailCodes[normalize(email)] = code;
-  DB.pendingSignup = { username, name, email, country, phone, password: pw, code };
-  document.getElementById("su-verify-code-wrapper").classList.remove("section-hidden");
-  document.getElementById("su-submit-btn").textContent = "Verify & Create Account →";
-  document.getElementById("su-code-hint").textContent = `A 6-digit code was sent to ${email}. (Demo code: ${code})`;
-  setAuthMsg(`📧 Verification code sent to ${email}.`, "info");
-});
-
-/* Login */
-formLogin.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const id = document.getElementById("li-identifier").value.trim();
-  const pw = document.getElementById("li-password").value;
-  const res = authLogin(id, pw);
-  if (res.error) return setAuthMsg(res.error, "error");
-  DB.currentUser = res.user;
-  const profile = getMyProfile();
-  if (profile) profile.last_seen_at = new Date().toISOString();
-  setAuthMsg("Logged in! Loading…", "success");
-  setTimeout(() => {
-    hideWelcome();
-    if (res.user.profileId) showView("home");
-    else { document.getElementById("onboard-name").textContent = res.user.name; signupDraft = { name: res.user.name }; showView("onboarding"); }
-  }, 500);
-});
-
-/* Forgot password */
-document.getElementById("fp-request-code-btn").addEventListener("click", () => {
-  const email = document.getElementById("fp-email").value.trim();
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setAuthMsg("Please enter a valid email address.", "error");
-  const user = DB.users.find(u => normalize(u.email) === normalize(email));
-  if (!user) return setAuthMsg("No account found with that email address.", "error");
-  const code = generateCode();
-  activeEmailCodes[normalize(email)] = code;
-  DB.pendingReset = { email, code, userId: user.id };
-  document.getElementById("fp-step1").classList.add("section-hidden");
-  document.getElementById("fp-step2").classList.remove("section-hidden");
-  document.getElementById("fp-code-hint").textContent = `A 6-digit code was sent to ${email}. (Demo code: ${code})`;
-  setAuthMsg(`📧 Verification code sent to ${email}.`, "info");
-});
-
-formForgot.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (!DB.pendingReset) return setAuthMsg("Please request a verification code first.", "error");
-  const entered = document.getElementById("fp-code").value.trim();
-  if (entered !== DB.pendingReset.code) return setAuthMsg("Invalid verification code.", "error");
-  const np = document.getElementById("fp-newpass").value;
-  const np2 = document.getElementById("fp-newpass2").value;
-  if (np.length < 4) return setAuthMsg("New password must be at least 4 characters.", "error");
-  if (np !== np2) return setAuthMsg("New passwords don't match.", "error");
-  const user = DB.users.find(u => u.id === DB.pendingReset.userId);
-  if (!user) return setAuthMsg("Account not found.", "error");
-  user.password = np;
-  DB.pendingReset = null;
-  setAuthMsg("✅ Password reset! You can now log in.", "success");
-  setTimeout(() => switchAuthTab("login"), 1400);
-});
-
-function setAuthMsg(text, type) {
-  const cls = type === "error" ? "auth-error" : type === "success" ? "auth-success" : "auth-info";
-  document.getElementById("auth-msg").innerHTML = `<div class="${cls}">${escapeHtml(text)}</div>`;
-}
-
-/* =================================================================
-   PASSWORD VISIBILITY TOGGLES
-   ================================================================= */
-document.querySelectorAll(".password-toggle-btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const targetId = btn.dataset.target;
-    const input = document.getElementById(targetId);
-    if (!input) return;
-    input.type = input.type === "password" ? "text" : "password";
-    btn.textContent = input.type === "password" ? "👁️" : "🙈";
+const SUPPORTED_COUNTRIES = COUNTRIES.map(c => c.name);
+function populateCountrySelects() {
+  ["su-country", "reg-country"].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    sel.innerHTML = SUPPORTED_COUNTRIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   });
-});
-document.getElementById("toggle-all-signup-passwords").addEventListener("change", (e) => {
-  const show = e.target.checked;
-  ["su-password", "su-password2"].forEach(id => {
-    const input = document.getElementById(id);
-    input.type = show ? "text" : "password";
-    const btn = document.querySelector(`.password-toggle-btn[data-target="${id}"]`);
-    if (btn) btn.textContent = show ? "🙈" : "👁️";
+}
+function populateInstCountrySelects() {
+  ["ob-inst-country", "inst-country"].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    sel.innerHTML = INST_COUNTRIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
   });
-});
-document.getElementById("toggle-login-password").addEventListener("change", (e) => {
-  const input = document.getElementById("li-password");
-  input.type = e.target.checked ? "text" : "password";
-  const btn = document.querySelector('.password-toggle-btn[data-target="li-password"]');
-  if (btn) btn.textContent = e.target.checked ? "🙈" : "👁️";
-});
-document.getElementById("toggle-all-reset-passwords").addEventListener("change", (e) => {
-  const show = e.target.checked;
-  ["fp-newpass", "fp-newpass2"].forEach(id => {
-    const input = document.getElementById(id);
-    input.type = show ? "text" : "password";
-    const btn = document.querySelector(`.password-toggle-btn[data-target="${id}"]`);
-    if (btn) btn.textContent = show ? "🙈" : "👁️";
+}
+function populateRegionSelects() {
+  const opts = REGIONS.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+  ["ob-county", "reg-county", "f-county"].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    const first = id === "f-county" ? `<option value="">Any</option>` : `<option value="">Select county / region…</option>`;
+    sel.innerHTML = first + opts;
   });
-});
+}
+populateCountrySelects(); populateInstCountrySelects(); populateRegionSelects();
 
 /* =================================================================
-   REGIONS
+   CHECKOUT LOGIC
    ================================================================= */
-["ob-county", "reg-county", "f-county"].forEach(id => {
-  const sel = document.getElementById(id);
-  if (!sel) return;
-  REGIONS.forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; sel.appendChild(o); });
-});
+let selectedCheckoutPlan = null;
 
-/* =================================================================
-   AUTOCOMPLETE
-   ================================================================= */
-function attachAutocomplete(inputEl, listEl, onPick, opts = {}) {
-  if (!inputEl || !listEl) return;
-  let activeIndex = -1; let items = [];
-  function close() { listEl.classList.add("section-hidden"); activeIndex = -1; }
-  function doAddManually() {
-    const raw = inputEl.value.trim(); if (!raw) return;
-    const country = opts.countrySelect ? opts.countrySelect.value : "Kenya";
-    const type = opts.typeSelect ? opts.typeSelect.value : "Other";
-    const inst = upsertInstitution(raw, type || "Other", country);
-    onPick(inst); close();
+function openCheckout(plan) {
+  document.getElementById("checkout-page").classList.add("open");
+  document.body.style.overflow = "hidden";
+  
+  if (plan) {
+    selectedCheckoutPlan = plan;
   }
-  function render(query) {
-    items = searchInstitutions(query, 10); listEl.innerHTML = "";
-    items.forEach((inst, i) => {
-      const div = document.createElement("div");
-      div.className = "autocomplete-item" + (i === activeIndex ? " active" : "");
-      const country = inst.country ? ` · ${escapeHtml(inst.country)}` : "";
-      div.innerHTML = `<strong>${escapeHtml(inst.name)}</strong><small>${escapeHtml(inst.type || "")}${country}</small>`;
-      div.addEventListener("mousedown", (e) => { e.preventDefault(); onPick(inst); close(); });
-      listEl.appendChild(div);
+
+  const plans = [
+    { id: "1month", name: "1 Month Premium", duration: "30 days", price: 300 },
+    { id: "3months", name: "3 Months Premium", duration: "90 days", price: 800 },
+    { id: "6months", name: "6 Months Premium", duration: "180 days", price: 1500 }
+  ];
+
+  const list = document.getElementById("ck-plan-list");
+  list.innerHTML = "";
+  plans.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "ck-plan" + (selectedCheckoutPlan === p.id ? " selected" : "");
+    div.innerHTML = `
+      <div class="ck-plan-info">
+        <h3>${p.name}</h3>
+        <p>${p.duration}</p>
+      </div>
+      <div class="ck-plan-price">
+        <span class="amount">KSh ${p.price}</span>
+      </div>
+    `;
+    div.addEventListener("click", () => {
+      selectedCheckoutPlan = p.id;
+      document.querySelectorAll(".ck-plan").forEach(el => el.classList.remove("selected"));
+      div.classList.add("selected");
+      updateCheckoutSummary(p);
     });
-    const trimmed = query.trim();
-    if (trimmed.length >= 2) {
-      const exact = DB.institutions.find(i => normalize(i.name) === normalize(trimmed));
-      if (!exact) {
-        const addDiv = document.createElement("div");
-        addDiv.className = "autocomplete-add";
-        addDiv.innerHTML = `<span class="plus-icon">+</span> Add "${escapeHtml(trimmed)}" manually`;
-        addDiv.addEventListener("mousedown", (e) => { e.preventDefault(); doAddManually(); });
-        listEl.appendChild(addDiv);
-      }
-    }
-    listEl.classList.remove("section-hidden");
-  }
-  inputEl.addEventListener("input", (e) => { const q = e.target.value; activeIndex = -1; if (q.trim().length < 1) { close(); return; } render(q); });
-  inputEl.addEventListener("keydown", (e) => {
-    if (listEl.classList.contains("section-hidden")) { if (e.key === "Enter" && inputEl.value.trim().length >= 2) { e.preventDefault(); doAddManually(); } return; }
-    if (e.key === "ArrowDown") { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); render(inputEl.value); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); render(inputEl.value); }
-    else if (e.key === "Enter") { e.preventDefault(); if (activeIndex >= 0) { onPick(items[activeIndex]); close(); } else { doAddManually(); } }
-    else if (e.key === "Escape") close();
+    list.appendChild(div);
   });
-  inputEl.addEventListener("blur", () => setTimeout(close, 150));
+
+  // Set initial state
+  const initialPlan = plans.find(p => p.id === selectedCheckoutPlan) || plans[0];
+  selectedCheckoutPlan = initialPlan.id;
+  if (list.firstChild) list.firstChild.classList.add("selected");
+  updateCheckoutSummary(initialPlan);
+
+  // Autofill email if logged in
+  if (DB.currentUser && DB.currentUser.email) {
+    document.getElementById("ck-email").value = DB.currentUser.email;
+  }
+
+  document.getElementById("ck-pay-btn").disabled = false;
+  document.getElementById("ck-alert").style.display = "none";
+  document.getElementById("ck-view-checkout").style.display = "block";
+  document.getElementById("ck-view-success").style.display = "none";
+  document.getElementById("ck-view-failure").style.display = "none";
 }
 
-attachAutocomplete(document.getElementById("ob-inst-name"), document.getElementById("ob-inst-suggestions"), (inst) => {
-  document.getElementById("ob-inst-name").value = inst.name;
-  if (inst.country) document.getElementById("ob-inst-country").value = inst.country;
-  if (!document.getElementById("ob-inst-type").value && inst.type) document.getElementById("ob-inst-type").value = inst.type;
-}, { countrySelect: document.getElementById("ob-inst-country"), typeSelect: document.getElementById("ob-inst-type") });
-
-attachAutocomplete(document.getElementById("inst-name"), document.getElementById("inst-suggestions"), (inst) => {
-  document.getElementById("inst-name").value = inst.name;
-  if (inst.country) document.getElementById("inst-country").value = inst.country;
-  if (!document.getElementById("inst-type").value && inst.type) document.getElementById("inst-type").value = inst.type;
-}, { countrySelect: document.getElementById("inst-country"), typeSelect: document.getElementById("inst-type") });
-
-/* =================================================================
-   PHOTO GALLERY SYSTEM
-   ================================================================= */
-const MAX_PHOTOS = 5;
-const MIN_PHOTOS = 2;
-
-const photoState = {
-  ob: { photos: [], profileIndex: 0, coverIndex: 0 },
-  reg: { photos: [], profileIndex: 0, coverIndex: 0 },
-};
-
-function renderPhotoGallery(prefix) {
-  const state = photoState[prefix];
-  const gallery = document.getElementById(prefix + '-photo-gallery');
-  const actions = document.getElementById(prefix + '-photo-actions');
-  const msg = document.getElementById(prefix + '-photo-msg');
-  if (!gallery) return;
-
-  gallery.innerHTML = '';
-  state.photos.forEach((src, i) => {
-    const slot = document.createElement('div');
-    let badge = '';
-    if (i === state.profileIndex) badge = '<div class="photo-badge">PROFILE</div>';
-    if (i === state.coverIndex) badge = '<div class="photo-badge" style="background:rgba(59,130,246,0.9);">COVER</div>';
-    slot.className = 'photo-slot ' + (i === state.profileIndex ? 'photo-profile ' : '') + (i === state.coverIndex ? 'photo-cover' : '');
-    slot.innerHTML = `
-      <img src="${src}" alt="Photo ${i + 1}" />
-      ${badge}
-      <button type="button" class="photo-remove" data-prefix="${prefix}" data-index="${i}">✕</button>`;
-    gallery.appendChild(slot);
-  });
-
-  if (state.photos.length < MAX_PHOTOS) {
-    const addSlot = document.createElement('div');
-    addSlot.className = 'photo-slot';
-    addSlot.style.borderStyle = 'dashed';
-    addSlot.innerHTML = '<span class="photo-placeholder">＋</span>';
-    addSlot.addEventListener('click', () => { document.getElementById(prefix + '-photo-input').click(); });
-    gallery.appendChild(addSlot);
-  }
-
-  actions.innerHTML = '';
-  state.photos.forEach((src, i) => {
-    if (i !== state.profileIndex) {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-ghost';
-      btn.textContent = `Set ${i + 1} as Profile`;
-      btn.style.fontSize = '10px';
-      btn.onclick = () => { state.profileIndex = i; renderPhotoGallery(prefix); };
-      actions.appendChild(btn);
-    }
-    if (i !== state.coverIndex) {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-ghost';
-      btn.textContent = `Set ${i + 1} as Cover`;
-      btn.style.fontSize = '10px';
-      btn.style.borderColor = '#93c5fd';
-      btn.style.color = '#1e40af';
-      btn.onclick = () => { state.coverIndex = i; renderPhotoGallery(prefix); };
-      actions.appendChild(btn);
-    }
-  });
-
-  if (state.photos.length < MIN_PHOTOS) {
-    msg.innerHTML = `<span style="color:#dc2626;">⚠ You need at least ${MIN_PHOTOS} photos (${state.photos.length}/${MIN_PHOTOS}).</span>`;
-  } else if (state.photos.length >= MAX_PHOTOS) {
-    msg.innerHTML = `<span style="color:#059669;">✅ Maximum ${MAX_PHOTOS} photos reached.</span>`;
-  } else {
-    msg.innerHTML = `<span style="color:#059669;">✅ ${state.photos.length} photo(s) added. You can add up to ${MAX_PHOTOS}.</span>`;
-  }
-
-  const coverSlot = document.getElementById(prefix + '-cover-preview-slot');
-  if (coverSlot) {
-    if (state.photos.length > 0 && state.photos[state.coverIndex]) {
-      coverSlot.classList.remove('section-hidden');
-      coverSlot.innerHTML = `<img src="${state.photos[state.coverIndex]}" alt="Cover" style="width:100%;height:100%;object-fit:cover;" /><div class="photo-badge" style="background:rgba(59,130,246,0.9);">COVER</div>`;
-    } else {
-      coverSlot.classList.add('section-hidden');
-    }
-  }
+function updateCheckoutSummary(plan) {
+  document.getElementById("ck-sum-plan").textContent = plan.name;
+  document.getElementById("ck-sum-duration").textContent = plan.duration;
+  document.getElementById("ck-sum-price").textContent = "KSh " + plan.price;
+  document.getElementById("ck-sum-total").textContent = "KSh " + plan.price;
 }
 
-function attachPhotoInput(prefix) {
-  const input = document.getElementById(prefix + '-photo-input');
-  input.addEventListener('change', (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    const state = photoState[prefix];
-    if (state.photos.length >= MAX_PHOTOS) { alert(`Maximum ${MAX_PHOTOS} photos allowed.`); input.value = ""; return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      state.photos.push(ev.target.result);
-      renderPhotoGallery(prefix);
-    };
-    reader.readAsDataURL(file);
-    input.value = "";
-  });
-
-  // Delegated remove buttons
-  document.getElementById(prefix + '-photo-gallery').addEventListener('click', (e) => {
-    const btn = e.target.closest('.photo-remove');
-    if (!btn) return;
-    const idx = parseInt(btn.dataset.index, 10);
-    const st = photoState[prefix];
-    st.photos.splice(idx, 1);
-    if (st.profileIndex >= st.photos.length) st.profileIndex = 0;
-    if (st.coverIndex >= st.photos.length) st.coverIndex = 0;
-    renderPhotoGallery(prefix);
-  });
-}
-attachPhotoInput('ob');
-attachPhotoInput('reg');
-
-/* =================================================================
-   ONBOARDING
-   ================================================================= */
-document.getElementById("onboard-save").addEventListener("click", () => {
-  if (!DB.currentUser) return;
-  const state = photoState.ob;
-  if (state.photos.length < MIN_PHOTOS) {
-    document.getElementById("ob-photo-msg").innerHTML = `<span style="color:#dc2626;">⚠ Add at least ${MIN_PHOTOS} photos before continuing.</span>`;
-    return;
-  }
-  const payload = {
-    name: signupDraft?.name || DB.currentUser.name,
-    age: parseInt(document.getElementById("ob-age").value, 10) || null,
-    gender: document.getElementById("ob-gender").value || null,
-    county: document.getElementById("ob-county").value || null,
-    town: document.getElementById("ob-town").value.trim() || null,
-    relationship_preference: document.getElementById("ob-rel").value || null,
-    hobbies: parseHobbies(document.getElementById("ob-hobbies").value),
-    smoking: document.getElementById("ob-smoking").value || null,
-    drinking: document.getElementById("ob-drinking").value || null,
-    institution_name: document.getElementById("ob-inst-name").value.trim(),
-    institution_type: document.getElementById("ob-inst-type").value || null,
-    institution_country: document.getElementById("ob-inst-country").value || "Kenya",
-    campus_name: document.getElementById("ob-inst-campus").value.trim() || null,
-    institution_visibility: document.getElementById("ob-inst-visible").checked,
-    photos: state.photos.slice(),
-    profile_photo: state.photos[state.profileIndex] || state.photos[0],
-    cover_photo: state.photos[state.coverIndex] || state.photos[0],
-    photo: state.photos[state.profileIndex] || state.photos[0],
-  };
-  const profile = saveProfile(payload);
-  DB.currentUser.profileId = profile.id;
-  showView("verify");
+// Close checkout
+document.getElementById("ck-close").addEventListener("click", () => {
+  document.getElementById("checkout-page").classList.remove("open");
+  document.body.style.overflow = "";
 });
 
-/* =================================================================
-   PROFILE EDIT
-   ================================================================= */
-function prefillProfileForm() {
-  const p = getMyProfile(); if (!p) return;
-  document.getElementById("reg-name").value = p.name || "";
-  document.getElementById("reg-age").value = p.age || "";
-  document.getElementById("reg-gender").value = p.gender || "";
-  document.getElementById("reg-county").value = p.county || "";
-  document.getElementById("reg-town").value = p.town || "";
-  document.getElementById("reg-rel").value = p.relationship_preference || "";
-  document.getElementById("reg-hobbies").value = (p.hobbies || []).join(", ");
-  document.getElementById("reg-smoking").value = p.smoking || "";
-  document.getElementById("reg-drinking").value = p.drinking || "";
-  document.getElementById("inst-name").value = p.institution_name || "";
-  document.getElementById("inst-type").value = p.institution_type || "";
-  document.getElementById("inst-country").value = p.institution_country || "Kenya";
-  document.getElementById("inst-campus").value = p.campus_name || "";
-  document.getElementById("inst-visible").checked = !!p.institution_visibility;
-  document.getElementById("reg-email").value = DB.currentUser ? DB.currentUser.email : "";
-  document.getElementById("reg-phone").value = DB.currentUser ? DB.currentUser.phoneNumber : "";
-
-  // Load photos into state
-  const st = photoState.reg;
-  st.photos = (p.photos || []).slice(0, MAX_PHOTOS);
-  if (st.photos.length === 0 && p.photo) st.photos = [p.photo];
-  st.profileIndex = 0;
-  st.coverIndex = 0;
-  if (p.profile_photo) {
-    const idx = st.photos.indexOf(p.profile_photo);
-    if (idx >= 0) st.profileIndex = idx;
-  }
-  if (p.cover_photo) {
-    const idx = st.photos.indexOf(p.cover_photo);
-    if (idx >= 0) st.coverIndex = idx;
-  }
-  renderPhotoGallery("reg");
-  document.getElementById("reg-msg").innerHTML = "";
-}
-
-document.getElementById("reg-save").addEventListener("click", () => {
-  const p = getMyProfile(); if (!p) return;
-  const state = photoState.reg;
-  if (state.photos.length < MIN_PHOTOS) {
-    document.getElementById("reg-msg").innerHTML = `<div class="notice">Add at least ${MIN_PHOTOS} photos (max ${MAX_PHOTOS}) to save your profile.</div>`;
+// Handle Real Paystack Payment
+document.getElementById("ck-pay-btn").addEventListener("click", async () => {
+  const email = document.getElementById("ck-email").value.trim();
+  if (!email) {
+    alert("Please enter your email for the receipt.");
     return;
   }
-  const payload = {
-    id: p.id,
-    name: document.getElementById("reg-name").value.trim() || p.name,
-    age: parseInt(document.getElementById("reg-age").value, 10) || null,
-    gender: document.getElementById("reg-gender").value || null,
-    county: document.getElementById("reg-county").value || null,
-    town: document.getElementById("reg-town").value.trim() || null,
-    relationship_preference: document.getElementById("reg-rel").value || null,
-    hobbies: parseHobbies(document.getElementById("reg-hobbies").value),
-    smoking: document.getElementById("reg-smoking").value || null,
-    drinking: document.getElementById("reg-drinking").value || null,
-    institution_name: document.getElementById("inst-name").value.trim(),
-    institution_type: document.getElementById("inst-type").value || null,
-    institution_country: document.getElementById("inst-country").value || "Kenya",
-    campus_name: document.getElementById("inst-campus").value.trim() || null,
-    institution_visibility: document.getElementById("inst-visible").checked,
-    photos: state.photos.slice(),
-    profile_photo: state.photos[state.profileIndex] || state.photos[0],
-    cover_photo: state.photos[state.coverIndex] || state.photos[0],
-    photo: state.photos[state.profileIndex] || state.photos[0],
-  };
-  const updated = saveProfile(payload);
-  const regEmail = document.getElementById("reg-email").value.trim();
-  const regPhone = document.getElementById("reg-phone").value.trim();
-  if (regEmail && DB.currentUser) DB.currentUser.email = regEmail;
-  if (regPhone && DB.currentUser) DB.currentUser.phoneNumber = regPhone;
-  document.getElementById("reg-msg").innerHTML = `<div class="success">✅ Profile saved. ${updated.photos.length} photos stored.</div>`;
-  renderHeader();
-  setTimeout(() => showView("home"), 900);
+
+  if (!selectedCheckoutPlan) {
+    alert("Please select a plan.");
+    return;
+  }
+
+  let amount = 0;
+  if (selectedCheckoutPlan === "1month") amount = 300;
+  if (selectedCheckoutPlan === "3months") amount = 800;
+  if (selectedCheckoutPlan === "6months") amount = 1500;
+
+  const payBtn = document.getElementById("ck-pay-btn");
+  payBtn.disabled = true;
+  payBtn.innerHTML = '<span class="spinner"></span> Processing...';
+
+  try {
+    // Calls the Vercel Backend API
+    const res = await fetch("/api/paystack/initialize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: email,
+        amount: amount,
+        plan: selectedCheckoutPlan
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    // Redirect the user to Paystack to pay
+    window.location.href = data.authorization_url;
+
+  } catch (error) {
+    console.error("Payment initialization failed:", error);
+    document.getElementById("ck-alert").style.display = "block";
+    document.getElementById("ck-alert").innerText = error.message || "Failed to initialize payment. Please try again.";
+    
+    payBtn.disabled = false;
+    payBtn.innerText = "Pay Securely";
+  }
 });
 
-/* =================================================================
-   VERIFY / CHECKOUT
-   ================================================================= */
+// Connect UI buttons to Checkout
+document.getElementById("pay-paystack-btn").addEventListener("click", () => {
+  if (selectedBatchPlan) openCheckout(selectedBatchPlan);
+  else alert("Please select a plan first.");
+});
+
+document.getElementById("subscribe-verify-btn").addEventListener("click", () => {
+  openCheckout("1month");
+});
+
+// Batch selection logic
 document.querySelectorAll(".batch-option").forEach(opt => {
   opt.addEventListener("click", () => {
     document.querySelectorAll(".batch-option").forEach(o => o.classList.remove("selected"));
     opt.classList.add("selected");
     selectedBatchPlan = opt.dataset.plan;
     document.getElementById("pay-paystack-btn").disabled = false;
-    document.getElementById("pay-binance-btn").disabled = false;
   });
 });
-document.getElementById("verify-skip").addEventListener("click", () => showView("home"));
 
-const CK_PLANS = [
-  { key: "free", name: "Free", duration: "3 hours", priceKes: 0, badge: null },
-  { key: "daily", name: "Daily", duration: "1 day", priceKes: 25, badge: null },
-  { key: "weekly", name: "Weekly", duration: "7 days", priceKes: 100, badge: null },
-  { key: "monthly", name: "Monthly", duration: "30 days", priceKes: 300, badge: "Popular" },
-  { key: "annual", name: "Annual", duration: "365 days", priceKes: 1500, badge: "Best Value" },
-];
-const checkoutState = { selectedKey: "monthly" };
+/* =================================================================
+   WELCOME / AUTH / UI BINDINGS
+   ================================================================= */
+function hideWelcome() { document.getElementById("welcome-page").classList.add("hidden"); }
+function showWelcome() { document.getElementById("welcome-page").classList.remove("hidden"); }
 
-function ckRenderPlans() {
-  const list = document.getElementById("ck-plan-list"); list.innerHTML = "";
-  CK_PLANS.forEach(plan => {
-    const card = document.createElement("div");
-    card.className = "ck-plan" + (plan.key === checkoutState.selectedKey ? " selected" : "");
-    const info = document.createElement("div"); info.className = "ck-plan-info";
-    if (plan.badge) { const b = document.createElement("span"); b.className = "ck-badge"; b.textContent = plan.badge; info.appendChild(b); }
-    const h3 = document.createElement("h3"); h3.textContent = plan.name; info.appendChild(h3);
-    const p = document.createElement("p"); p.textContent = "Access for " + plan.duration; info.appendChild(p);
-    const priceWrap = document.createElement("div"); priceWrap.className = "ck-plan-price";
-    const amount = document.createElement("span"); amount.className = "amount";
-    amount.textContent = plan.priceKes === 0 ? "Free" : "KSh " + plan.priceKes.toLocaleString();
-    const period = document.createElement("span"); period.className = "period";
-    period.textContent = plan.priceKes === 0 ? "no charge" : "one-time";
-    priceWrap.appendChild(amount); priceWrap.appendChild(period);
-    card.appendChild(info); card.appendChild(priceWrap);
-    card.addEventListener("click", () => { checkoutState.selectedKey = plan.key; ckRenderPlans(); ckUpdateSummary(); });
-    list.appendChild(card);
-  });
-}
-function ckUpdateSummary() {
-  const plan = CK_PLANS.find(p => p.key === checkoutState.selectedKey);
-  document.getElementById("ck-sum-plan").textContent = plan.name + " Membership";
-  document.getElementById("ck-sum-duration").textContent = plan.duration;
-  document.getElementById("ck-sum-price").textContent = plan.priceKes === 0 ? "KSh 0" : "KSh " + plan.priceKes.toLocaleString();
-  document.getElementById("ck-sum-total").textContent = plan.priceKes === 0 ? "KSh 0" : "KSh " + plan.priceKes.toLocaleString();
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(document.getElementById("ck-email").value.trim());
-  document.getElementById("ck-pay-btn").disabled = !(plan.priceKes > 0 && emailOk);
-}
-document.getElementById("ck-email").addEventListener("input", ckUpdateSummary);
-function ckShowView(which) {
-  document.getElementById("ck-view-checkout").style.display = which === "checkout" ? "block" : "none";
-  document.getElementById("ck-view-success").style.display = which === "success" ? "block" : "none";
-  document.getElementById("ck-view-failure").style.display = which === "failure" ? "block" : "none";
-}
-function ckAlert(msg) { const el = document.getElementById("ck-alert"); el.textContent = msg; el.style.display = "block"; }
-function ckHideAlert() { document.getElementById("ck-alert").style.display = "none"; }
+document.getElementById("welcome-login-btn").addEventListener("click", () => { hideWelcome(); showView("auth"); document.getElementById("auth-tab-login").click(); });
+document.getElementById("welcome-signup-btn").addEventListener("click", () => { hideWelcome(); showView("auth"); document.getElementById("auth-tab-signup").click(); });
+document.getElementById("welcome-cta-login").addEventListener("click", () => { hideWelcome(); showView("auth"); document.getElementById("auth-tab-login").click(); });
+document.getElementById("welcome-cta-signup").addEventListener("click", () => { hideWelcome(); showView("auth"); document.getElementById("auth-tab-signup").click(); });
 
-function openCheckout(preselectKey) {
-  document.getElementById("checkout-page").classList.add("open");
-  document.body.style.overflow = "hidden";
-  if (preselectKey) {
-    const map = { "1month": "monthly", "3months": "monthly", "6months": "annual" };
-    checkoutState.selectedKey = map[preselectKey] || "monthly";
-  }
-  if (DB.currentUser && DB.currentUser.email) document.getElementById("ck-email").value = DB.currentUser.email;
-  ckRenderPlans(); ckUpdateSummary(); ckShowView("checkout");
-}
-function closeCheckout() { document.getElementById("checkout-page").classList.remove("open"); document.body.style.overflow = ""; }
-document.getElementById("pay-paystack-btn").addEventListener("click", () => openCheckout(selectedBatchPlan));
-document.getElementById("pay-binance-btn").addEventListener("click", () => openCheckout(selectedBatchPlan));
-document.getElementById("subscribe-verify-btn").addEventListener("click", () => openCheckout("1month"));
-document.getElementById("ck-close").addEventListener("click", closeCheckout);
+document.getElementById("auth-tab-signup").addEventListener("click", () => {
+  document.getElementById("auth-tab-signup").classList.add("active");
+  document.getElementById("auth-tab-login").classList.remove("active");
+  document.getElementById("auth-tab-forgot").classList.remove("active");
+  document.getElementById("signup-form").classList.remove("section-hidden");
+  document.getElementById("login-form").classList.add("section-hidden");
+  document.getElementById("forgot-form").classList.add("section-hidden");
+});
+document.getElementById("auth-tab-login").addEventListener("click", () => {
+  document.getElementById("auth-tab-login").classList.add("active");
+  document.getElementById("auth-tab-signup").classList.remove("active");
+  document.getElementById("auth-tab-forgot").classList.remove("active");
+  document.getElementById("login-form").classList.remove("section-hidden");
+  document.getElementById("signup-form").classList.add("section-hidden");
+  document.getElementById("forgot-form").classList.add("section-hidden");
+});
+document.getElementById("auth-tab-forgot").addEventListener("click", () => {
+  document.getElementById("auth-tab-forgot").classList.add("active");
+  document.getElementById("auth-tab-signup").classList.remove("active");
+  document.getElementById("auth-tab-login").classList.remove("active");
+  document.getElementById("forgot-form").classList.remove("section-hidden");
+  document.getElementById("signup-form").classList.add("section-hidden");
+  document.getElementById("login-form").classList.add("section-hidden");
+});
 
-document.getElementById("ck-pay-btn").addEventListener("click", async () => {
-  const plan = CK_PLANS.find(p => p.key === checkoutState.selectedKey);
-  if (!plan || plan.priceKes <= 0) return;
-  const email = document.getElementById("ck-email").value.trim();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { ckAlert("Please enter a valid email address."); return; }
-  const btn = document.getElementById("ck-pay-btn");
-  const btnText = document.getElementById("ck-pay-btn-text");
-  btn.disabled = true; btnText.innerHTML = '<span class="spinner"></span>Initializing…'; ckHideAlert();
-  try {
-    const res = await fetch("https://https://campusconnect.onrender.com.onrender.com/api/paystack/initialize", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, plan: plan.key, amount: plan.priceKes * 100, currency: "KES", callback_url: window.location.origin + "/checkout/callback" })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.authorization_url) throw new Error(data.message || "Failed to initialize payment.");
-    sessionStorage.setItem("paystack_reference", data.reference);
-    window.location.href = data.authorization_url;
-  } catch (err) {
-    btn.disabled = false; btnText.textContent = "Pay Securely";
-    if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-      ckAlert("Demo mode: no backend configured. Simulating Paystack callback…");
-      setTimeout(() => ckHandleSuccessDemo(plan), 900);
-    } else {
-      ckAlert(err.message || "Network error. Please try again.");
+document.querySelectorAll(".password-toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const target = document.getElementById(btn.dataset.target);
+    if (target) {
+      target.type = target.type === "password" ? "text" : "password";
+      btn.textContent = target.type === "password" ? "👁️" : "🙈";
     }
-  }
+  });
 });
 
-function ckHandleSuccessDemo(plan) {
-  const ref = "DEMO-" + Date.now().toString(36).toUpperCase();
-  const now = new Date();
-  const expires = new Date(Date.now() + (plan.key === "annual" ? 365 : plan.key === "monthly" ? 30 : plan.key === "weekly" ? 7 : 1) * 86400000);
-  const profile = getMyProfile();
-  if (profile) { profile.verified = true; profile.verified_until = expires.toISOString(); }
-  ckRenderSuccess({ reference: ref, amount: plan.priceKes * 100, subscription: { plan_name: plan.name + " Membership", activated_at: now.toISOString(), expires_at: expires.toISOString() } });
-  if (profile) renderHome();
-}
-function ckRenderSuccess(data) {
-  const sub = data.subscription;
-  const ref = data.reference || "—";
-  const amount = data.amount ? "KSh " + (data.amount / 100).toLocaleString() : "—";
-  document.getElementById("ck-receipt").innerHTML =
-    ckReceiptRow("Transaction Reference", ref) +
-    ckReceiptRow("Amount Paid", amount) +
-    ckReceiptRow("Subscription Package", sub.plan_name || "Premium Membership") +
-    ckReceiptRow("Activation Date", sub.activated_at ? new Date(sub.activated_at).toLocaleString() : "—") +
-    ckReceiptRow("Expiry Date", sub.expires_at ? new Date(sub.expires_at).toLocaleString() : "—");
-  ckShowView("success");
-}
-function ckReceiptRow(label, value) {
-  return '<div class="ck-receipt-row"><span class="label">' + label + '</span><span class="value">' + escapeHtml(String(value)) + '</span></div>';
-}
-function ckRenderFailure(title, message) {
-  document.getElementById("ck-fail-title").textContent = title;
-  document.getElementById("ck-fail-message").textContent = message;
-  ckShowView("failure");
-}
-document.getElementById("ck-retry-btn").addEventListener("click", () => { ckShowView("checkout"); ckUpdateSummary(); });
-document.getElementById("ck-home-btn").addEventListener("click", closeCheckout);
-document.getElementById("ck-go-dashboard").addEventListener("click", () => { closeCheckout(); showView("home"); });
-document.getElementById("ck-go-discover").addEventListener("click", () => { closeCheckout(); showView("discover"); });
-document.getElementById("ck-view-receipt").addEventListener("click", () => window.print());
-
-function ckHandleCallback() {
-  const params = new URLSearchParams(window.location.search);
-  const reference = params.get("reference") || params.get("trxref");
-  if (!reference) return false;
-  document.getElementById("checkout-page").classList.add("open");
-  document.body.style.overflow = "hidden";
-  ckShowView("success");
-  document.getElementById("ck-receipt").innerHTML = '<p style="text-align:center;color:#8a6d78;">Verifying your payment…</p>';
-  fetch("https://campusconnect.onrender.com/api/subscription/status?reference=" + encodeURIComponent(reference))
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === "success" && data.subscription) ckRenderSuccess(data);
-      else ckRenderFailure("Payment Not Completed", data.message || "We could not verify a successful payment.");
-    })
-    .catch(() => ckRenderFailure("Verification Error", "We could not verify your payment."));
-  return true;
-}
-
-/* =================================================================
-   HOME
-   ================================================================= */
-function renderHome() {
-  const users = DB.profiles;
-  document.getElementById("stat-users").textContent = users.length;
-  document.getElementById("stat-inst").textContent = DB.institutions.length;
-  document.getElementById("stat-verified").textContent = users.filter(isVerified).length;
-  const grid = document.getElementById("featured-grid");
-  let featured = users.filter(u => u.institution_visibility && u.institution_name);
-  if (featured.length < 4) featured = users.slice();
-  featured = featured.sort((a, b) => (isVerified(b) ? 1 : 0) - (isVerified(a) ? 1 : 0)).slice(0, 8);
-  grid.innerHTML = "";
-  featured.forEach(u => grid.appendChild(buildFeaturedCard(u)));
-  const myProfile = getMyProfile();
-  if (myProfile && isVerified(myProfile)) {
-    const vc = document.getElementById("verify-card");
-    vc.style.background = "linear-gradient(135deg, #f0fdf4, #ecfdf5)";
-    vc.style.borderColor = "#22c55e";
-    vc.querySelector("h3").textContent = "✅ You're Verified!";
-    vc.querySelector("p").innerHTML = `Active until <strong>${new Date(myProfile.verified_until).toLocaleDateString()}</strong>.`;
-    const btn = document.getElementById("subscribe-verify-btn");
-    btn.textContent = "Verified — Active"; btn.disabled = true; btn.style.background = "#22c55e";
-  }
-}
-document.getElementById("hero-cta").addEventListener("click", () => { if (!DB.currentUser) return showView("auth"); showView("register"); });
-document.getElementById("hero-cta2").addEventListener("click", () => { if (!DB.currentUser) return showView("auth"); showView("discover"); });
-document.getElementById("see-all-link").addEventListener("click", () => showView("discover"));
-
-function buildFeaturedCard(u) {
-  const card = document.createElement("div");
-  const gender = (u.gender || "other").toLowerCase();
-  const isFemale = gender === "female"; const isMale = gender === "male";
-  card.className = "featured-card" + (isFemale ? " female-card" : isMale ? " male-card" : " other-card");
-  const coverClass = isFemale ? "female-cover" : isMale ? "male-cover" : "other-cover";
-  const coverStyle = u.cover_photo ? `background-image:url('${u.cover_photo}');` : "";
-  const hobbyHtml = (u.hobbies || []).slice(0, 4).map(h => `<span class="hobby-tag">${escapeHtml(h)}</span>`).join("") || `<span class="hint">No hobbies</span>`;
-  const instHtml = (u.institution_visibility && u.institution_name) ? `<div class="featured-inst">🏫 ${escapeHtml(u.institution_name)}</div>` : `<div class="featured-inst hidden-inst">Institution hidden</div>`;
-  const myProfile = getMyProfile();
-  const isMe = myProfile && u.id === myProfile.id;
-  const verifyBadge = isVerified(u) ? `<span class="verified-badge">✓ Verified</span>` : "";
-  const profilePhoto = u.profile_photo || u.photo || "";
-  const avatarInner = profilePhoto ? `<img src="${profilePhoto}" alt="" onerror="this.style.display='none'"/>` : escapeHtml((u.name || "?").charAt(0).toUpperCase());
-  card.innerHTML = `
-    <div class="featured-cover ${coverClass}" style="${coverStyle}"><div class="avatar">${avatarInner}</div></div>
-    <div class="featured-body">
-      <h3>${escapeHtml(u.name)} ${isOnline(u) ? '<span class="online-dot"></span>' : ""} ${verifyBadge}</h3>
-      <div class="sub">${u.age ? `${u.age} yrs` : "—"} ${u.county ? ` · ${escapeHtml(u.county)}` : ""}</div>
-      ${instHtml}
-      <div class="featured-hobbies">${hobbyHtml}</div>
-      <div class="featured-actions">
-        ${isMe ? `<button class="btn-view" style="flex:1;">Your Profile</button>` : `<button class="btn-chat">💬 Chat</button><button class="btn-view">View</button>`}
-      </div>
-    </div>`;
-  card.querySelector(".btn-view").addEventListener("click", () => openProfileModal(u.id));
-  if (!isMe) card.querySelector(".btn-chat").addEventListener("click", () => { openConversationWith(u.id); showView("chat"); });
-  return card;
-}
-
-/* =================================================================
-   DISCOVER / CHAT / MODAL
-   ================================================================= */
-function renderResults() {
-  const results = discover({
-    age_min: parseInt(document.getElementById("f-age-min").value, 10) || null,
-    age_max: parseInt(document.getElementById("f-age-max").value, 10) || null,
-    gender: document.getElementById("f-gender").value || null,
-    county: document.getElementById("f-county").value || null,
-    town: document.getElementById("f-town").value.trim() || null,
-    institution_types: document.getElementById("f-inst-type").value ? [document.getElementById("f-inst-type").value] : null,
+document.getElementById("toggle-all-signup-passwords").addEventListener("change", (e) => {
+  const show = e.target.checked;
+  ["su-password", "su-password2"].forEach(id => {
+    const input = document.getElementById(id);
+    input.type = show ? "text" : "password";
   });
-  document.getElementById("results-count").textContent = results.length + " member(s)";
-  const wrap = document.getElementById("results"); wrap.innerHTML = "";
-  if (!results.length) { wrap.innerHTML = `<div class="empty">No members match those filters yet.</div>`; return; }
-  results.forEach(u => {
-    const div = document.createElement("div");
-    div.className = "profile-card";
-    const profilePhoto = u.profile_photo || u.photo || "";
-    const avatarInner = profilePhoto ? `<img src="${profilePhoto}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />` : "";
-    div.innerHTML = `
-      <h3>${avatarInner} ${escapeHtml(u.name)} ${isVerified(u) ? `<span class="verified-badge">✓ Verified</span>` : ""}</h3>
-      <div class="profile-meta">${u.age ? u.age + " yrs" : "—"} ${u.county ? " · " + escapeHtml(u.county) : ""}</div>
-      ${u.institution_visibility && u.institution_name ? `<div class="featured-inst">🏫 ${escapeHtml(u.institution_name)}</div>` : ""}
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">${(u.hobbies || []).map(h => `<span class="hobby-tag">${escapeHtml(h)}</span>`).join("")}</div>
-      <div class="featured-actions" style="margin-top:10px;">
-        <button class="btn-chat">💬 Chat</button><button class="btn-view">View</button>
-      </div>`;
-    div.querySelector(".btn-view").addEventListener("click", () => openProfileModal(u.id));
-    div.querySelector(".btn-chat").addEventListener("click", () => { openConversationWith(u.id); showView("chat"); });
-    wrap.appendChild(div);
+  document.querySelectorAll('[data-target^="su-password"]').forEach(btn => btn.textContent = show ? "🙈" : "👁️");
+});
+document.getElementById("toggle-login-password").addEventListener("change", (e) => {
+  const show = e.target.checked;
+  const input = document.getElementById("li-password");
+  input.type = show ? "text" : "password";
+  document.querySelector('[data-target="li-password"]').textContent = show ? "🙈" : "👁️";
+});
+document.getElementById("toggle-all-reset-passwords").addEventListener("change", (e) => {
+  const show = e.target.checked;
+  ["fp-newpass", "fp-newpass2"].forEach(id => {
+    const input = document.getElementById(id);
+    input.type = show ? "text" : "password";
   });
-}
-document.getElementById("f-search").addEventListener("click", renderResults);
-document.getElementById("f-reset").addEventListener("click", () => {
-  ["f-age-min","f-age-max","f-town"].forEach(id => document.getElementById(id).value = "");
-  ["f-gender","f-county","f-inst-type"].forEach(id => document.getElementById(id).value = "");
-  renderResults();
+  document.querySelectorAll('[data-target^="fp-newpass"]').forEach(btn => btn.textContent = show ? "🙈" : "👁️");
 });
 
-function convKey(a, b) { return [a, b].sort((x, y) => x - y).join("_"); }
-function openConversationWith(profileId) {
-  activeChatPartnerId = profileId;
-  const me = getMyProfile(); if (!me) return;
-  const key = convKey(me.id, profileId);
-  if (!DB.conversations[key]) DB.conversations[key] = { participants: [me.id, profileId], messages: [] };
-  renderChatView();
-}
-function renderChatView() {
-  const me = getMyProfile(); if (!me) return;
-  const list = document.getElementById("chat-list"); list.innerHTML = "";
-  const convs = Object.entries(DB.conversations).filter(([_, c]) => c.participants.includes(me.id));
-  convs.forEach(([key, c]) => {
-    const otherId = c.participants.find(id => id !== me.id);
-    const other = DB.profiles.find(p => p.id === otherId);
-    if (!other) return;
-    const last = c.messages[c.messages.length - 1];
-    const item = document.createElement("div");
-    item.className = "chat-list-item" + (otherId === activeChatPartnerId ? " active" : "");
-    const photo = other.profile_photo ? `<img src="${other.profile_photo}" />` : escapeHtml(other.name.charAt(0));
-    item.innerHTML = `<div class="chat-list-avatar">${photo}</div><div class="chat-list-info"><h4>${escapeHtml(other.name)}</h4><p>${last ? escapeHtml(last.text.slice(0, 40)) : "No messages yet"}</p></div>`;
-    item.addEventListener("click", () => { activeChatPartnerId = otherId; renderChatView(); });
-    list.appendChild(item);
+// Simple signup logic
+document.getElementById("signup-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const res = authSignup({
+    username: document.getElementById("su-username").value,
+    name: document.getElementById("su-name").value,
+    email: document.getElementById("su-email").value,
+    country: document.getElementById("su-country").value,
+    phone: document.getElementById("su-phone").value,
+    password: document.getElementById("su-password").value
   });
-  const main = document.getElementById("chat-main");
-  if (!activeChatPartnerId) {
-    main.innerHTML = `<div class="chat-empty"><div class="big-icon">💌</div><h3 style="margin:0 0 8px;color:#831843;">Select a conversation</h3><p style="margin:0;">Choose a member to start chatting.</p></div>`;
-    return;
-  }
-  const other = DB.profiles.find(p => p.id === activeChatPartnerId); if (!other) return;
-  const key = convKey(me.id, other.id);
-  const conv = DB.conversations[key] || { messages: [] };
-  const photo = other.profile_photo ? `<img src="${other.profile_photo}" />` : escapeHtml(other.name.charAt(0));
-  main.innerHTML = `
-    <div class="chat-main-header"><div class="chat-list-avatar">${photo}</div><div class="chat-main-header-info"><h4>${escapeHtml(other.name)}</h4><p>${isOnline(other) ? "Online" : "Offline"}</p></div></div>
-    <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-input-area"><input type="text" id="chat-text" placeholder="Type a message…" /><button class="send-btn" id="chat-send">➤</button></div>`;
-  const msgs = document.getElementById("chat-messages");
-  conv.messages.forEach(m => {
-    const d = document.createElement("div");
-    d.className = "msg " + (m.from === me.id ? "sent" : "received");
-    d.innerHTML = `${escapeHtml(m.text)}<div class="msg-meta">${new Date(m.ts).toLocaleTimeString()}</div>`;
-    msgs.appendChild(d);
-  });
-  msgs.scrollTop = msgs.scrollHeight;
-  document.getElementById("chat-send").addEventListener("click", () => {
-    const input = document.getElementById("chat-text");
-    const txt = input.value.trim(); if (!txt) return;
-    const mod = moderateText(txt);
-    if (mod.blocked) { alert(mod.reason); return; }
-    conv.messages.push({ id: DB._msgId++, from: me.id, type: "text", text: txt, ts: Date.now() });
-    input.value = "";
-    renderChatView();
-  });
-}
+  if (res.error) return alert(res.error);
+  DB.currentUser = res.user;
+  showView("onboarding");
+});
 
-function openProfileModal(profileId) {
-  const p = DB.profiles.find(x => x.id === profileId); if (!p) return;
-  const root = document.getElementById("modal-root");
-  const coverUrl = p.cover_photo;
-  const profileUrl = p.profile_photo || p.photo;
-  const coverStyle = coverUrl ? `background-image:url('${coverUrl}');background-size:cover;background-position:center;` : "";
-  const photosHtml = (p.photos || []).map((url, i) => `<img src="${url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid ${url === p.profile_photo ? '#be185d' : '#fce7f3'};" />`).join("");
-  const avatarInner = profileUrl ? `<img src="${profileUrl}" />` : escapeHtml((p.name || "?").charAt(0).toUpperCase());
-  root.innerHTML = `
-    <div class="modal-backdrop" id="profile-modal-backdrop">
-      <div class="modal">
-        <div class="modal-cover" style="${coverStyle}"><div class="avatar">${avatarInner}</div></div>
-        <div class="modal-body">
-          <h3>${escapeHtml(p.name)} ${isVerified(p) ? `<span class="verified-badge">✓ Verified</span>` : ""}</h3>
-          <div class="sub">${p.age ? p.age + ' yrs' : '—'} ${p.county ? '· ' + escapeHtml(p.county) : ''}</div>
-          ${p.institution_visibility && p.institution_name ? `<div class="featured-inst">🏫 ${escapeHtml(p.institution_name)}</div>` : ''}
-          ${photosHtml ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;">${photosHtml}</div>` : ''}
-          <div style="display:flex;flex-wrap:wrap;gap:5px;margin:12px 0;">${(p.hobbies || []).map(h => `<span class="hobby-tag">${escapeHtml(h)}</span>`).join('') || '<span class="hint">No hobbies listed</span>'}</div>
-          <button class="btn btn-full" id="modal-chat-btn" style="margin-top:10px;">💬 Send a message</button>
-          <button class="btn btn-ghost btn-full" id="modal-close-btn" style="margin-top:8px;">Close</button>
-        </div>
-        <button class="modal-close" id="modal-x">✕</button>
-      </div>
-    </div>`;
-  root.querySelector("#modal-x").addEventListener("click", () => root.innerHTML = "");
-  root.querySelector("#modal-close-btn").addEventListener("click", () => root.innerHTML = "");
-  root.querySelector("#modal-chat-btn").addEventListener("click", () => { root.innerHTML = ""; openConversationWith(p.id); showView("chat"); });
-}
+document.getElementById("login-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const res = authLogin(document.getElementById("li-identifier").value, document.getElementById("li-password").value);
+  if (res.error) return alert(res.error);
+  DB.currentUser = res.user;
+  if (DB.currentUser.profileId) showView("home");
+  else showView("onboarding");
+});
 
-/* HERO ROTATION */
-const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1516575334481-f85287c2c82d?w=1400&h=700&fit=crop',
-  'https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=1400&h=700&fit=crop',
-  'https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=1400&h=700&fit=crop',
-];
-let heroIndex = 0;
-function rotateHeroBackground() {
-  const hero = document.getElementById('hero-bg'); if (!hero) return;
-  hero.style.backgroundImage = `url('${HERO_IMAGES[heroIndex]}')`;
-  heroIndex = (heroIndex + 1) % HERO_IMAGES.length;
-}
-rotateHeroBackground(); setInterval(rotateHeroBackground, 5000);
+document.getElementById("logout-btn")?.addEventListener("click", () => authLogout());
 
-/* BOOT */
-document.body.style.overflow = 'hidden';
+// Initialize the first view
 showView("auth");
-if (!ckHandleCallback()) { /* welcome visible */ }
 </script>
 </body>
 </html>
