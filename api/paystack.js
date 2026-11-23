@@ -4,9 +4,42 @@ import cors from 'cors';
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // Increased limit in case you send base64 images in the future
+// INCREASE LIMIT: Allow up to 10MB payloads for base64 images
+app.use(express.json({ limit: '10mb' })); 
 
-// Vercel routes requests here via /api/paystack
+// ==========================================
+// PHOTO UPLOAD ROUTE
+// ==========================================
+app.post('/api/upload', async (req, res) => {
+  try {
+    const { image, userId } = req.body;
+
+    if (!image) {
+      return res.status(400).json({ error: "No image provided" });
+    }
+
+    // In a real app, you would save this to a database or cloud storage (S3, Cloudinary).
+    // For now, we simulate a successful save and return the image URL.
+    console.log(`Received image for user: ${userId}`);
+
+    // Simulate processing time
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Return the base64 string back as the "stored URL"
+    res.json({ 
+      success: true, 
+      imageUrl: image 
+    });
+
+  } catch (error) {
+    console.error("Upload Error:", error);
+    res.status(500).json({ error: "Failed to upload image" });
+  }
+});
+
+// ==========================================
+// PAYSTACK ROUTE
+// ==========================================
 app.post('/api/paystack/initialize', async (req, res) => {
   try {
     const { email, amount, plan } = req.body;
@@ -15,7 +48,6 @@ app.post('/api/paystack/initialize', async (req, res) => {
       return res.status(400).json({ error: "Email and amount are required" });
     }
 
-    // Paystack expects amount in kobo (KES * 100)
     const amountInKobo = amount * 100;
 
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -27,9 +59,7 @@ app.post('/api/paystack/initialize', async (req, res) => {
       body: JSON.stringify({
         email,
         amount: amountInKobo,
-        metadata: {
-          plan: plan
-        }
+        metadata: { plan: plan }
       })
     });
 
